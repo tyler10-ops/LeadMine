@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx next dev:*)",
+      "Bash(npx tsc:*)",
+      "Bash(lsof:*)",
+      "Bash(npm run dev:*)",
+      "Bash(PATH=/usr/local/bin:$PATH /usr/local/bin/npm run dev:*)",
+      "Bash(/usr/local/bin/npx tsc:*)"
+    ]
+  }
+}

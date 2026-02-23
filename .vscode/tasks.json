@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Claude – About",
+      "type": "shell",
+      "command": "claude",
+      "presentation": { "panel": "new" }
+    },
+    {
+      "label": "Claude – Contact",
+      "type": "shell",
+      "command": "claude",
+      "presentation": { "panel": "new" }
+    },
+    {
+      "label": "Claude – Services",
+      "type": "shell",
+      "command": "claude",
+      "presentation": { "panel": "new" }
+    }
+  ]
+}
