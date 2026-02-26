@@ -151,7 +151,7 @@ export default function LeadsPage() {
                     <PipelineStageBadge stage={lead.stage || "new"} />
                   </td>
                   <td className="py-3 px-4">
-                    <Badge variant={lead.intent}>{lead.intent}</Badge>
+                    <Badge variant={lead.intent as any}>{lead.intent}</Badge>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">

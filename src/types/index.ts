@@ -28,13 +28,21 @@ export interface LeadQualification {
   objections?: string[];
 }
 
+export type GemGrade = "elite" | "refined" | "rock" | "ungraded";
+
 export interface Lead {
   id: string;
-  realtor_id: string;
+  realtor_id?: string;
+  client_id?: string;
   email: string;
   name: string | null;
   phone: string | null;
-  intent: "buyer" | "seller" | "investor" | "unknown";
+  intent: "buyer" | "seller" | "investor" | "unknown" | "hot" | "warm" | "cold";
+  gem_grade: GemGrade;
+  company_name: string | null;
+  industry: string | null;
+  source_url: string | null;
+  enrichment_data: Record<string, unknown> | null;
   score: number;
   source: string;
   notes: string | null;

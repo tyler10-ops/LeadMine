@@ -36,7 +36,7 @@ export function RecentLeads({ leads }: RecentLeadsProps) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Badge variant={lead.intent}>{lead.intent}</Badge>
+                <Badge variant={lead.intent as any}>{lead.intent}</Badge>
                 <span className="text-xs text-neutral-400">
                   {getRelativeTime(lead.created_at)}
                 </span>
