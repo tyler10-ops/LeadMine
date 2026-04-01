@@ -3,7 +3,7 @@ import { GEM, GLOW, type StatusLevel, STATUS_GEM } from "@/lib/cave-theme";
 
 interface GemIndicatorProps {
   /** Explicit gem color variant */
-  variant?: "green" | "yellow" | "red";
+  variant?: "green" | "yellow" | "red" | "diamond";
   /** Or pass a status level — maps to gem color automatically */
   status?: StatusLevel;
   /** Pulse animation (default: true for active, false otherwise) */

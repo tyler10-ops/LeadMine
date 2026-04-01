@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Gem, GemVariant } from "./gem";
 
-export type GradeLevel = "elite" | "strong" | "weak";
+export type GradeLevel = "elite" | "refined" | "rock" | "ungraded";
 
 interface GemGradeProps {
   grade: GradeLevel;
@@ -29,21 +29,29 @@ const GRADE_CONFIG: Record<
     bg: "bg-[#00FF88]/[0.07]",
     border: "border-[#00FF88]/20",
   },
-  strong: {
+  refined: {
     variant: "yellow",
-    label: "Refined Potential",
+    label: "Refined",
     sublabel: "Grade B",
     color: "text-[#FFD60A]",
     bg: "bg-[#FFD60A]/[0.07]",
     border: "border-[#FFD60A]/20",
   },
-  weak: {
+  rock: {
     variant: "red",
-    label: "Discarded Rock",
+    label: "Rock",
     sublabel: "Grade C",
     color: "text-[#FF3B30]",
     bg: "bg-[#FF3B30]/[0.07]",
     border: "border-[#FF3B30]/20",
+  },
+  ungraded: {
+    variant: "red",
+    label: "Ungraded",
+    sublabel: "Pending",
+    color: "text-neutral-500",
+    bg: "bg-neutral-500/[0.07]",
+    border: "border-neutral-500/20",
   },
 };
 

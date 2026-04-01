@@ -8,9 +8,10 @@
 // ── Gem color system (3 states only) ──────────────────────────────────────────
 
 export const GEM = {
-  green:  "#00FF88",   // Elite / Active / Bullish / Qualified
-  yellow: "#FFD60A",   // Potential / Paused / Neutral / Pending
-  red:    "#FF3B30",   // Rejected / Error / Bearish / Dead
+  green:   "#00FF88",   // Elite / Active / Bullish / Qualified
+  yellow:  "#FFD60A",   // Potential / Paused / Neutral / Pending
+  red:     "#FF3B30",   // Rejected / Error / Bearish / Dead
+  diamond: "#00FFD4",   // Diamond heat tier — glowing emerald/cyan
 } as const;
 
 // ── Glow values (use for drop-shadow and box-shadow) ─────────────────────────
@@ -40,15 +41,24 @@ export const GLOW = {
     border: "rgba(255, 59, 48, 0.22)",
     bg:     "rgba(255, 59, 48, 0.06)",
   },
+  diamond: {
+    soft:   "0 0 8px rgba(0, 255, 212, 0.35)",
+    medium: "0 0 16px rgba(0, 255, 212, 0.55)",
+    strong: "0 0 28px rgba(0, 255, 212, 0.75), 0 0 56px rgba(0, 255, 212, 0.2)",
+    inset:  "inset 0 0 20px rgba(0, 255, 212, 0.06)",
+    border: "rgba(0, 255, 212, 0.22)",
+    bg:     "rgba(0, 255, 212, 0.06)",
+  },
 } as const;
 
 // ── Cave surface system ───────────────────────────────────────────────────────
 
 export const CAVE = {
-  base:      "#0A0A0A",  // Body / page background
-  deep:      "#08080f",  // Panel backgrounds (slightly blue-tinted deep)
+  base:      "#000000",  // Body / page background
+  deep:      "#000000",  // Panel backgrounds
   surface1:  "#111111",  // Card surfaces
   surface2:  "rgba(255,255,255,0.025)",  // Glass panels
+  stone:     "rgba(255,255,255,0.08)",   // Strong border / dashed outlines
   stoneEdge: "rgba(255,255,255,0.055)", // Standard borders
   stoneMid:  "rgba(255,255,255,0.04)",  // Subtle dividers
   stoneDeep: "#1A1A1A",  // Heavier borders
@@ -65,13 +75,14 @@ export const TIMING = {
 
 // ── Status → gem color mapping ────────────────────────────────────────────────
 
-export type StatusLevel = "active" | "paused" | "error" | "idle";
+export type StatusLevel = "active" | "paused" | "error" | "idle" | "calling";
 
 export const STATUS_GEM: Record<StatusLevel, keyof typeof GEM> = {
-  active: "green",
-  idle:   "yellow",
-  paused: "yellow",
-  error:  "red",
+  active:  "green",
+  calling: "green",
+  idle:    "yellow",
+  paused:  "yellow",
+  error:   "red",
 };
 
 // ── Signal direction → gem color ──────────────────────────────────────────────
@@ -86,7 +97,7 @@ export const SIGNAL_GEM: Record<SignalDirection, keyof typeof GEM> = {
 
 // ── Score → gem color (lead qualification scores) ────────────────────────────
 
-export function scoreToGem(score: number): keyof typeof GEM {
+export function scoreToGem(score: number): "green" | "yellow" | "red" {
   if (score >= 80) return "green";
   if (score >= 55) return "yellow";
   return "red";

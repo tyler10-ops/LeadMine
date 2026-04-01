@@ -1,6 +1,5 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { HubShell } from "./hub-shell";
 
 export default async function DashboardLayout({
   children,
@@ -15,19 +14,19 @@ export default async function DashboardLayout({
 
   if (!user) redirect("/auth/login");
 
-  const { data: realtor } = await supabase
-    .from("realtors")
-    .select("slug, name, city")
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id")
     .eq("user_id", user.id)
     .single();
 
-  return (
-    <HubShell
-      realtorSlug={realtor?.slug}
-      realtorName={realtor?.name}
-      realtorCity={realtor?.city}
-    >
-      {children}
-    </HubShell>
-  );
+  const { data: realtor } = await supabase
+    .from("realtors")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!client && !realtor) redirect("/onboarding");
+
+  return <>{children}</>;
 }

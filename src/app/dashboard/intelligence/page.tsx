@@ -1,617 +1,503 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Search,
-  SlidersHorizontal,
-  Download,
-  Bell,
-  ChevronDown,
-  Zap,
-  Users,
-  TrendingUp,
-  Database,
-  X,
   RefreshCw,
-  Filter,
+  Download,
+  Gem,
+  Flame,
+  Zap,
+  Globe,
+  Phone,
+  Mail,
+  Pickaxe,
+  ChevronDown,
+  ExternalLink,
   Shield,
-  Lock,
+  X,
+  Loader2,
 } from "lucide-react";
-import { FilterSidebar } from "@/components/dashboard/intelligence-engine/filter-sidebar";
-import { LeadCard, Lead } from "@/components/dashboard/intelligence-engine/lead-card";
 import { cn } from "@/lib/utils";
 
-// ─── Placeholder lead data ────────────────────────────────────────────────────
-const MOCK_LEADS: Lead[] = [
-  {
-    id: "l1",
-    name: "Michael & Sarah Torres",
-    address: "4821 Oakwood Drive",
-    city: "Austin",
-    state: "TX",
-    zip: "78745",
-    phone: "(512) 847-2293",
-    email: "m.torres@email.com",
-    estimatedValue: 487000,
-    equityEstimate: 312000,
-    equityPercent: 64,
-    mortgageBalance: 175000,
-    yearsOwned: 9,
-    intentScore: 87,
-    automationScore: 91,
-    propertyType: "Single Family",
-    ownerType: "Owner Occupied",
-    badges: ["High Intent", "Motivated Seller"],
-    opportunitySummary:
-      "This homeowner has 64% equity and has owned for 9 years. Market appreciation and average hold duration suggest a 78% likelihood of listing within 5 months.",
-    lastActivity: "2 days ago",
-    signals: ["Equity threshold crossed", "Long hold duration"],
-    source: "Public Records + MLS",
-  },
-  {
-    id: "l2",
-    name: "Raj Patel",
-    address: "2109 River Oak Lane",
-    city: "Houston",
-    state: "TX",
-    zip: "77019",
-    phone: "(713) 229-4451",
-    email: "raj.patel@gmail.com",
-    estimatedValue: 1240000,
-    equityEstimate: 890000,
-    equityPercent: 72,
-    mortgageBalance: 350000,
-    yearsOwned: 14,
-    intentScore: 92,
-    automationScore: 88,
-    propertyType: "Single Family",
-    ownerType: "Absentee Owner",
-    badges: ["High Intent", "Investor", "Portfolio Owner"],
-    opportunitySummary:
-      "Absentee owner with 72% equity across a 14-year hold. Portfolio signals and tax delinquency flags indicate an 85% seller likelihood. Ideal for multi-property outreach.",
-    lastActivity: "5 hours ago",
-    signals: ["Absentee owner", "Portfolio flag", "Equity threshold crossed"],
-    source: "County Records + Credit Signals",
-  },
-  {
-    id: "l3",
-    name: "Jennifer Whitmore",
-    address: "809 Becker Ranch Road",
-    city: "Pflugerville",
-    state: "TX",
-    zip: "78660",
-    phone: "(512) 334-7812",
-    email: "jwhitmore@yahoo.com",
-    estimatedValue: 328000,
-    equityEstimate: 185000,
-    equityPercent: 56,
-    mortgageBalance: 143000,
-    yearsOwned: 6,
-    intentScore: 61,
-    automationScore: 74,
-    propertyType: "Single Family",
-    ownerType: "Owner Occupied",
-    badges: ["Recently Active"],
-    opportunitySummary:
-      "Owner has viewed 12 active listings in the past 30 days. Moderate equity at 56% with a typical hold period suggests exploratory buyer activity with 6-month listing probability at 45%.",
-    lastActivity: "1 day ago",
-    signals: ["Active listing views", "Price drop alert engagement"],
-    source: "Behavioral Data + MLS Activity",
-  },
-  {
-    id: "l4",
-    name: "Carlos & Maya Rivera",
-    address: "3318 Summit Ridge Drive",
-    city: "San Antonio",
-    state: "TX",
-    zip: "78230",
-    phone: "(210) 555-0183",
-    email: "crivera.home@gmail.com",
-    estimatedValue: 415000,
-    equityEstimate: 301000,
-    equityPercent: 72,
-    mortgageBalance: 114000,
-    yearsOwned: 11,
-    intentScore: 78,
-    automationScore: 83,
-    propertyType: "Single Family",
-    ownerType: "Owner Occupied",
-    badges: ["High Intent", "Motivated Seller"],
-    opportunitySummary:
-      "72% equity homeowner with 11-year tenure. Appreciation signals and neighborhood turnover rate of 18% suggest a 70% probability of listing in the next 4 months.",
-    lastActivity: "3 days ago",
-    signals: ["Appreciation spike", "Neighborhood turnover trigger"],
-    source: "Public Records + Appreciation Index",
-  },
-  {
-    id: "l5",
-    name: "David Thornton",
-    address: "12 Commerce Blvd, Unit 4",
-    city: "Dallas",
-    state: "TX",
-    zip: "75201",
-    phone: "(214) 742-1990",
-    email: "dthornton.invest@outlook.com",
-    estimatedValue: 2100000,
-    equityEstimate: 1680000,
-    equityPercent: 80,
-    mortgageBalance: 420000,
-    yearsOwned: 18,
-    intentScore: 95,
-    automationScore: 94,
-    propertyType: "Multi-Family",
-    ownerType: "Non-Owner Occupied",
-    badges: ["High Intent", "Investor", "Cash Buyer", "Portfolio Owner"],
-    opportunitySummary:
-      "High-value investor with 80% equity on a multi-family portfolio held 18 years. Cap rate trends and rate environment suggest a 91% disposition likelihood within 90 days. Premium outreach candidate.",
-    lastActivity: "6 hours ago",
-    signals: [
-      "Cap rate compression",
-      "Portfolio rebalancing signal",
-      "Long hold duration",
-    ],
-    source: "Commercial Records + Investment Analytics",
-  },
-  {
-    id: "l6",
-    name: "Lisa Park",
-    address: "4412 Heather Glen Ct",
-    city: "Frisco",
-    state: "TX",
-    zip: "75034",
-    phone: "(469) 381-5520",
-    email: "lpark.home@icloud.com",
-    estimatedValue: 720000,
-    equityEstimate: 396000,
-    equityPercent: 55,
-    mortgageBalance: 324000,
-    yearsOwned: 5,
-    intentScore: 54,
-    automationScore: 68,
-    propertyType: "Single Family",
-    ownerType: "Owner Occupied",
-    badges: ["Recently Active"],
-    opportunitySummary:
-      "Newer homeowner with moderate equity. Recent school district searches and saved new-construction listings suggest upgrade intent. Buyer-side lead with 58% probability of purchasing within 6 months.",
-    lastActivity: "12 hours ago",
-    signals: ["Saved searches: new construction", "School district research"],
-    source: "Behavioral Data + Search Signals",
-  },
-  {
-    id: "l7",
-    name: "Marcus & Diane Webb",
-    address: "9204 Stone Canyon Rd",
-    city: "Austin",
-    state: "TX",
-    zip: "78759",
-    phone: "(512) 918-3341",
-    email: "marcus.webb@proton.me",
-    estimatedValue: 615000,
-    equityEstimate: 472000,
-    equityPercent: 77,
-    mortgageBalance: 143000,
-    yearsOwned: 16,
-    intentScore: 89,
-    automationScore: 87,
-    propertyType: "Single Family",
-    ownerType: "Owner Occupied",
-    badges: ["High Intent", "Motivated Seller"],
-    opportunitySummary:
-      "Long-hold homeowner with 77% equity and above-average appreciation. Neighborhood comp activity and 16-year tenure strongly align with seller readiness. Recommend immediate outreach.",
-    lastActivity: "1 day ago",
-    signals: ["High equity", "Comp activity spike", "16-year tenure trigger"],
-    source: "County Assessor + MLS Comps",
-  },
-  {
-    id: "l8",
-    name: "The Greenberg Family Trust",
-    address: "501 Lake Travis View",
-    city: "Austin",
-    state: "TX",
-    zip: "78738",
-    phone: "(512) 266-1492",
-    email: "trust@greenbergholdings.com",
-    estimatedValue: 3800000,
-    equityEstimate: 3400000,
-    equityPercent: 89,
-    mortgageBalance: 400000,
-    yearsOwned: 22,
-    intentScore: 97,
-    automationScore: 96,
-    propertyType: "Single Family",
-    ownerType: "Non-Owner Occupied",
-    badges: ["High Intent", "Investor", "Cash Buyer", "Portfolio Owner"],
-    opportunitySummary:
-      "Trust-held lakefront asset with 89% equity and 22-year hold. Estate planning signals and trust restructuring activity indicate a 94% likelihood of disposition within 12 months. Highest-priority outreach target.",
-    lastActivity: "3 hours ago",
-    signals: ["Trust restructuring", "Estate planning signal", "22-year tenure"],
-    source: "Trust Records + Financial Intelligence",
-  },
-];
+// ── Types ────────────────────────────────────────────────────────────────────
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+type GemGrade = "elite" | "refined" | "rock" | "ungraded";
+type Intent   = "hot" | "warm" | "cold" | "unknown";
 
-function FilterPill({
-  label,
-  onRemove,
-}: {
-  label: string;
-  onRemove: () => void;
-}) {
+interface EnrichmentData {
+  emails?: string[];
+  phones?: string[];
+  socialLinks?: string[];
+  hasContactPage?: boolean;
+  title?: string;
+  description?: string;
+  keywords?: string[];
+}
+
+interface MinedLead {
+  id: string;
+  company_name: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  industry: string | null;
+  gem_grade: GemGrade;
+  score: number;
+  intent: Intent;
+  source: string;
+  source_url: string | null;
+  enrichment_data: EnrichmentData;
+  notes: string | null;
+  created_at: string;
+}
+
+interface Stats {
+  total: number;
+  elite: number;
+  refined: number;
+  rock: number;
+  hot: number;
+  today: number;
+}
+
+// ── Grade config ─────────────────────────────────────────────────────────────
+
+const GRADE: Record<GemGrade, { label: string; color: string; bg: string; icon: React.ReactNode }> = {
+  elite:    { label: "Elite",    color: "#00FF88", bg: "rgba(0,255,136,0.08)",  icon: <Gem   className="w-3 h-3" /> },
+  refined:  { label: "Refined",  color: "#f59e0b", bg: "rgba(245,158,11,0.08)", icon: <Zap   className="w-3 h-3" /> },
+  rock:     { label: "Rock",     color: "#6b7280", bg: "rgba(107,114,128,0.08)",icon: <Pickaxe className="w-3 h-3" /> },
+  ungraded: { label: "Ungraded", color: "#4b5563", bg: "rgba(75,85,99,0.06)",   icon: <Pickaxe className="w-3 h-3" /> },
+};
+
+const INTENT_COLOR: Record<Intent, string> = {
+  hot:     "#ef4444",
+  warm:    "#f59e0b",
+  cold:    "#60a5fa",
+  unknown: "#4b5563",
+};
+
+// ── Lead Card ────────────────────────────────────────────────────────────────
+
+function LeadCard({ lead }: { lead: MinedLead }) {
+  const grade = GRADE[lead.gem_grade] ?? GRADE.ungraded;
+  const intentColor = INTENT_COLOR[lead.intent] ?? "#4b5563";
+  const emails = [lead.email, ...(lead.enrichment_data?.emails ?? [])].filter((e): e is string => !!e);
+  const phones = [lead.phone, ...(lead.enrichment_data?.phones ?? [])].filter((p): p is string => !!p);
+  const primaryEmail = emails[0] ?? null;
+  const primaryPhone = phones[0] ?? null;
+  const website = lead.source_url ?? null;
+  const description = lead.enrichment_data?.description ?? null;
+  const minedAt = new Date(lead.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+
   return (
-    <div className="flex items-center gap-1.5 bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-medium px-2.5 py-1 rounded-full flex-shrink-0">
-      {label}
-      <button onClick={onRemove} className="hover:text-brand-200 transition-colors">
-        <X className="w-3 h-3" />
-      </button>
+    <div
+      className="rounded-xl border p-4 flex flex-col gap-3 transition-all hover:border-white/10 group"
+      style={{ background: "#0d0d0d", borderColor: "rgba(255,255,255,0.05)" }}
+    >
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-[13px] font-semibold text-neutral-100 truncate">
+              {lead.company_name ?? lead.name ?? "Unknown Business"}
+            </h3>
+            {/* Grade badge */}
+            <span
+              className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold flex-shrink-0"
+              style={{ color: grade.color, background: grade.bg }}
+            >
+              {grade.icon}
+              {grade.label}
+            </span>
+            {/* Intent */}
+            {lead.intent !== "unknown" && (
+              <span
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium flex-shrink-0"
+                style={{ color: intentColor, background: `${intentColor}14` }}
+              >
+                {lead.intent.charAt(0).toUpperCase() + lead.intent.slice(1)}
+              </span>
+            )}
+          </div>
+          {lead.industry && (
+            <p className="text-[11px] text-neutral-600 mt-0.5">{lead.industry}</p>
+          )}
+        </div>
+
+        {/* Score */}
+        <div className="flex-shrink-0 text-right">
+          <p className="text-[18px] font-bold tabular-nums" style={{ color: grade.color }}>
+            {lead.score}
+          </p>
+          <p className="text-[9px] text-neutral-700 uppercase tracking-wider">score</p>
+        </div>
+      </div>
+
+      {/* Score bar */}
+      <div className="h-0.5 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.05)" }}>
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${lead.score}%`, background: grade.color }}
+        />
+      </div>
+
+      {/* Description */}
+      {description && (
+        <p className="text-[11px] text-neutral-500 leading-relaxed line-clamp-2">
+          {description}
+        </p>
+      )}
+
+      {/* Contact info */}
+      <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+        {primaryEmail && (
+          <a
+            href={`mailto:${primaryEmail}`}
+            className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-[#00FF88] transition-colors min-w-0"
+          >
+            <Mail className="w-3 h-3 flex-shrink-0 text-neutral-600" />
+            <span className="truncate">{primaryEmail}</span>
+          </a>
+        )}
+        {primaryPhone && (
+          <a
+            href={`tel:${primaryPhone}`}
+            className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-[#00FF88] transition-colors"
+          >
+            <Phone className="w-3 h-3 flex-shrink-0 text-neutral-600" />
+            {primaryPhone}
+          </a>
+        )}
+        {website && (
+          <a
+            href={website}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-[11px] text-neutral-400 hover:text-[#00FF88] transition-colors"
+          >
+            <Globe className="w-3 h-3 flex-shrink-0 text-neutral-600" />
+            <span className="truncate max-w-[160px]">{website.replace(/^https?:\/\//, "").replace(/\/$/, "")}</span>
+            <ExternalLink className="w-2.5 h-2.5 flex-shrink-0 opacity-50" />
+          </a>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between text-[10px] text-neutral-700 pt-1 border-t border-white/[0.03]">
+        <span>Mined {minedAt}</span>
+        <span className="uppercase tracking-wider">{lead.source ?? "LeadMine"}</span>
+      </div>
     </div>
   );
 }
 
-function StatCounter({
-  icon: Icon,
-  label,
-  value,
-  change,
-  color,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  change?: string;
-  color: string;
-}) {
+// ── Stat pill ─────────────────────────────────────────────────────────────────
+
+function Stat({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-white/[0.02] border border-white/[0.05] rounded-xl flex-shrink-0">
-      <div
-        className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-        style={{ backgroundColor: `${color}18` }}
-      >
-        <Icon className="w-3.5 h-3.5" style={{ color }} />
-      </div>
+    <div
+      className="flex items-center gap-2 px-3.5 py-2 rounded-xl border flex-shrink-0"
+      style={{ background: `${color}06`, borderColor: `${color}18` }}
+    >
       <div>
         <p className="text-[10px] text-neutral-600 whitespace-nowrap">{label}</p>
-        <p className="text-[13px] font-semibold text-neutral-200">{value}</p>
+        <p className="text-[15px] font-bold tabular-nums" style={{ color }}>{value.toLocaleString()}</p>
       </div>
-      {change && (
-        <span className="text-[10px] text-emerald-400 ml-1 whitespace-nowrap">
-          {change}
-        </span>
-      )}
     </div>
   );
 }
 
-const SORT_OPTIONS = [
-  "Intent Score",
-  "Est. Value",
-  "Equity %",
-  "Years Owned",
-  "Recently Active",
+// ── Page ─────────────────────────────────────────────────────────────────────
+
+const GRADE_FILTERS = [
+  { value: "",         label: "All Grades" },
+  { value: "elite",   label: "Elite" },
+  { value: "refined", label: "Refined" },
+  { value: "rock",    label: "Rock" },
 ];
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+const INTENT_FILTERS = [
+  { value: "",      label: "Any Intent" },
+  { value: "hot",   label: "Hot" },
+  { value: "warm",  label: "Warm" },
+  { value: "cold",  label: "Cold" },
+];
 
 export default function IntelligencePage() {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [query, setQuery] = useState("");
-  const [activePills, setActivePills] = useState<string[]>([
-    "Austin, TX",
-    "Equity 50%+",
-    "Intent 60+",
-  ]);
-  const [toast, setToast] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState("Intent Score");
+  const [leads, setLeads]       = useState<MinedLead[]>([]);
+  const [stats, setStats]       = useState<Stats>({ total: 0, elite: 0, refined: 0, rock: 0, hot: 0, today: 0 });
+  const [loading, setLoading]   = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [query, setQuery]       = useState("");
+  const [grade, setGrade]       = useState("");
+  const [intent, setIntent]     = useState("");
   const [sortOpen, setSortOpen] = useState(false);
+  const [sortBy, setSortBy]     = useState<"newest" | "score">("newest");
+  const [error, setError]       = useState<string | null>(null);
 
-  const credits = { total: 2500, used: 1847 };
-  const creditPct = Math.round((credits.used / credits.total) * 100);
+  const fetchLeads = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
 
-  const filtered = MOCK_LEADS.filter(
-    (l) =>
-      query === "" ||
-      l.name.toLowerCase().includes(query.toLowerCase()) ||
-      l.address.toLowerCase().includes(query.toLowerCase()) ||
-      l.city.toLowerCase().includes(query.toLowerCase()) ||
-      l.zip.includes(query)
-  );
+    try {
+      const params = new URLSearchParams({ limit: "200" });
+      if (grade)  params.set("grade", grade);
+      if (intent) params.set("intent", intent);
+      if (query)  params.set("q", query);
 
-  const toggleSelect = (id: string) =>
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+      const res = await fetch(`/api/intelligence/leads?${params}`);
+      if (!res.ok) throw new Error("Failed to load leads");
+      const data = await res.json();
+      setLeads(data.leads ?? []);
+      setStats(data.stats ?? { total: 0, elite: 0, refined: 0, rock: 0, hot: 0, today: 0 });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [grade, intent, query]);
 
-  const selectAll = () =>
-    setSelectedIds(
-      selectedIds.length === filtered.length ? [] : filtered.map((l) => l.id)
-    );
+  // Initial load and when filters change
+  useEffect(() => {
+    const t = setTimeout(() => fetchLeads(), query ? 350 : 0);
+    return () => clearTimeout(t);
+  }, [fetchLeads]);
 
-  const handleAddToWorkflow = (id: string) => {
-    const lead = MOCK_LEADS.find((l) => l.id === id);
-    if (!lead) return;
-    setToast(lead.name);
-    setTimeout(() => setToast(null), 3500);
+  const sorted = [...leads].sort((a, b) => {
+    if (sortBy === "score") return b.score - a.score;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
+  const handleExport = () => {
+    if (!leads.length) return;
+    const headers = ["Company", "Industry", "Grade", "Score", "Email", "Phone", "Website", "Mined At"];
+    const rows = leads.map((l) => [
+      l.company_name ?? l.name ?? "",
+      l.industry ?? "",
+      l.gem_grade,
+      l.score,
+      l.email ?? (l.enrichment_data?.emails?.[0] ?? ""),
+      l.phone ?? (l.enrichment_data?.phones?.[0] ?? ""),
+      l.source_url ?? "",
+      new Date(l.created_at).toISOString(),
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement("a"), { href: url, download: "leadmine-intelligence.csv" });
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="flex flex-col h-screen bg-[#080c12] text-neutral-100 overflow-hidden">
-      {/* ── Global activation toast ── */}
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 flex items-center gap-2.5 bg-emerald-600 text-white text-[12px] font-semibold px-4 py-2.5 rounded-xl shadow-xl shadow-emerald-900/40">
-          <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-          {toast} activated in Seller Nurture Sequence
-        </div>
-      )}
+    <div className="flex flex-col h-screen bg-[#080808] text-neutral-100 overflow-hidden">
 
-      {/* ── Top search bar ── */}
-      <div className="flex-shrink-0 border-b border-white/[0.05] bg-[#080c12]/90 backdrop-blur-xl px-6 py-4 space-y-4">
-        {/* Row 1: title + search + controls */}
-        <div className="flex items-center gap-4">
-          <div className="flex-shrink-0">
-            <h1 className="text-[13px] font-bold text-neutral-100 leading-tight">
-              Intelligence Engine
-            </h1>
-            <p className="text-[10px] text-neutral-600">
-              Real Estate Lead Intelligence
+      {/* ── Header ── */}
+      <div className="flex-shrink-0 border-b border-white/[0.05] bg-[#080808]/95 backdrop-blur-xl px-6 py-4 space-y-3">
+
+        {/* Title row */}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Gem className="w-4 h-4 text-[#00FF88]" />
+              <h1 className="text-[14px] font-bold text-neutral-100 tracking-tight">Intelligence</h1>
+            </div>
+            <p className="text-[10px] text-neutral-600 mt-0.5">
+              AI-mined leads · updating continuously
             </p>
           </div>
 
-          {/* Global search */}
-          <div className="flex-1 relative max-w-2xl">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-600" />
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => fetchLeads(true)}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-neutral-500 hover:text-neutral-300 border border-white/[0.06] hover:border-white/[0.12] transition-all"
+            >
+              <RefreshCw className={cn("w-3 h-3", refreshing && "animate-spin")} />
+              Refresh
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={!leads.length}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] text-neutral-500 hover:text-neutral-300 border border-white/[0.06] hover:border-white/[0.12] transition-all disabled:opacity-40"
+            >
+              <Download className="w-3 h-3" />
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="flex items-center gap-2.5 overflow-x-auto pb-0.5">
+          <Stat label="Total Mined"   value={stats.total}   color="#00FF88" />
+          <Stat label="Elite Gems"    value={stats.elite}   color="#00FF88" />
+          <Stat label="Refined"       value={stats.refined} color="#f59e0b" />
+          <Stat label="Hot Intent"    value={stats.hot}     color="#ef4444" />
+          <Stat label="Mined Today"   value={stats.today}   color="#60a5fa" />
+        </div>
+
+        {/* Search + filters */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Search */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-600" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, address, ZIP, investor type, phone..."
-              className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl pl-10 pr-4 py-2.5 text-[12px] text-neutral-300 placeholder-neutral-700 focus:outline-none focus:border-brand-500/50 focus:bg-brand-500/[0.03] focus:shadow-[0_0_24px_rgba(18,119,178,0.08)] transition-all"
+              placeholder="Search company, email, phone..."
+              className="w-full bg-white/[0.03] border border-white/[0.07] rounded-lg pl-9 pr-4 py-2 text-[12px] text-neutral-300 placeholder-neutral-700 focus:outline-none focus:border-[#00FF88]/30 transition-all"
             />
-          </div>
-
-          {/* Right controls */}
-          <div className="flex items-center gap-2.5 flex-shrink-0 ml-auto">
-            {/* Credit meter */}
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-white/[0.03] border border-white/[0.06] rounded-lg">
-              <Database className="w-3.5 h-3.5 text-neutral-500" />
-              <div>
-                <p className="text-[10px] text-neutral-600 mb-0.5">AI Credits</p>
-                <div className="flex items-center gap-2">
-                  <div className="w-16 h-1 bg-white/[0.08] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-brand-600 to-brand-400"
-                      style={{ width: `${creditPct}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-neutral-400 tabular-nums">
-                    {(credits.total - credits.used).toLocaleString()} left
-                  </span>
-                </div>
-              </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-400 border border-brand-500/30 bg-brand-500/10 px-1.5 py-0.5 rounded">
-                Pro
-              </span>
-            </div>
-
-            <button className="flex items-center gap-1.5 border border-white/[0.08] hover:border-white/[0.15] text-neutral-400 text-[11px] font-medium px-3 py-2 rounded-lg transition-colors">
-              <Download className="w-3.5 h-3.5" />
-              Export
-            </button>
-
-            <button className="relative border border-white/[0.08] hover:border-white/[0.15] text-neutral-500 hover:text-neutral-300 p-2 rounded-lg transition-colors">
-              <Bell className="w-3.5 h-3.5" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-red-500" />
-            </button>
-          </div>
-        </div>
-
-        {/* Row 2: live counters + filter toggle */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-0.5">
-          <StatCounter
-            icon={Users}
-            label="Total Leads"
-            value="24,812"
-            change="+143 today"
-            color="#1277b2"
-          />
-          <StatCounter
-            icon={TrendingUp}
-            label="High Intent (75+)"
-            value="3,891"
-            color="#10b981"
-          />
-          <StatCounter
-            icon={Zap}
-            label="Automation Ready"
-            value="2,247"
-            color="#f59e0b"
-          />
-          <StatCounter
-            icon={Database}
-            label="Enriched Today"
-            value="891"
-            color="#a855f7"
-          />
-
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className={cn(
-              "ml-auto flex-shrink-0 flex items-center gap-1.5 text-[11px] font-medium px-3 py-2.5 rounded-xl border transition-all",
-              sidebarOpen
-                ? "bg-brand-500/10 border-brand-500/30 text-brand-400"
-                : "border-white/[0.08] text-neutral-500 hover:border-white/[0.15] hover:text-neutral-300"
+            {query && (
+              <button onClick={() => setQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-600 hover:text-neutral-400">
+                <X className="w-3 h-3" />
+              </button>
             )}
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-            {sidebarOpen ? "Hide" : "Show"} Filters
-          </button>
+          </div>
+
+          {/* Grade filter */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {GRADE_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setGrade(f.value)}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all border",
+                  grade === f.value
+                    ? "bg-[#00FF88]/10 text-[#00FF88] border-[#00FF88]/20"
+                    : "text-neutral-600 border-white/[0.05] hover:border-white/[0.1] hover:text-neutral-400"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Intent filter */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {INTENT_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setIntent(f.value)}
+                className={cn(
+                  "px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all border",
+                  intent === f.value
+                    ? "bg-white/[0.06] text-neutral-200 border-white/[0.1]"
+                    : "text-neutral-600 border-white/[0.05] hover:border-white/[0.1] hover:text-neutral-400"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort */}
+          <div className="relative flex-shrink-0">
+            <button
+              onClick={() => setSortOpen(!sortOpen)}
+              className="flex items-center gap-1 text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors px-2 py-1.5"
+            >
+              Sort: {sortBy === "newest" ? "Newest" : "Score"}
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {sortOpen && (
+              <div className="absolute right-0 top-full mt-1 w-36 bg-[#111] border border-white/[0.08] rounded-xl overflow-hidden shadow-xl z-20">
+                {(["newest", "score"] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => { setSortBy(opt); setSortOpen(false); }}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-[11px] transition-colors",
+                      sortBy === opt ? "text-[#00FF88] bg-[#00FF88]/08" : "text-neutral-400 hover:bg-white/[0.03] hover:text-neutral-200"
+                    )}
+                  >
+                    {opt === "newest" ? "Newest first" : "Highest score"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── Body: sidebar + results ── */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Filter sidebar */}
-        {sidebarOpen && (
-          <div className="w-72 flex-shrink-0 overflow-hidden">
-            <FilterSidebar />
+      {/* ── Body ── */}
+      <div className="flex-1 overflow-y-auto">
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <Loader2 className="w-5 h-5 animate-spin text-[#00FF88]/50" />
+            <p className="text-[12px] text-neutral-600">Loading intelligence...</p>
           </div>
         )}
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Sticky results bar */}
-          <div className="flex-shrink-0 bg-[#080c12]/90 backdrop-blur-xl border-b border-white/[0.04] px-6 py-3 flex items-center gap-3">
-            {/* Select all checkbox */}
-            <div
-              className={cn(
-                "w-4 h-4 rounded border cursor-pointer flex items-center justify-center flex-shrink-0 transition-all",
-                selectedIds.length === filtered.length && filtered.length > 0
-                  ? "bg-brand-500 border-brand-500"
-                  : "border-neutral-700 hover:border-neutral-500"
-              )}
-              onClick={selectAll}
+        {/* Error */}
+        {!loading && error && (
+          <div className="flex flex-col items-center justify-center h-64 gap-3">
+            <p className="text-[12px] text-neutral-500">{error}</p>
+            <button onClick={() => fetchLeads()} className="text-[11px] text-[#00FF88] hover:underline">Retry</button>
+          </div>
+        )}
+
+        {/* Empty — no leads yet */}
+        {!loading && !error && leads.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <Pickaxe className="w-8 h-8 text-neutral-700" />
+            <div className="text-center">
+              <p className="text-[13px] text-neutral-400 font-medium">No leads mined yet</p>
+              <p className="text-[11px] text-neutral-600 mt-1">
+                Start a mining run to begin collecting leads
+              </p>
+            </div>
+            <a
+              href="/dashboard/mining"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold transition-all"
+              style={{ background: "rgba(0,255,136,0.1)", color: "#00FF88", border: "1px solid rgba(0,255,136,0.2)" }}
             >
-              {selectedIds.length === filtered.length && filtered.length > 0 && (
-                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 10 10" fill="none">
-                  <path
-                    d="M1.5 5L4 7.5L8.5 2.5"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              )}
-            </div>
-
-            {/* Active filter pills */}
-            <div className="flex items-center gap-2 flex-1 overflow-x-auto">
-              {activePills.map((pill) => (
-                <FilterPill
-                  key={pill}
-                  label={pill}
-                  onRemove={() =>
-                    setActivePills((prev) => prev.filter((p) => p !== pill))
-                  }
-                />
-              ))}
-              {activePills.length === 0 && (
-                <span className="text-[11px] text-neutral-700">
-                  No active filters
-                </span>
-              )}
-            </div>
-
-            {/* Right: bulk action + count + sort */}
-            <div className="flex items-center gap-3 flex-shrink-0 ml-auto">
-              {selectedIds.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-brand-400 font-semibold">
-                    {selectedIds.length} selected
-                  </span>
-                  <button className="text-[11px] bg-brand-500 hover:bg-brand-400 text-white px-3 py-1.5 rounded-lg transition-colors font-semibold">
-                    Bulk Add to Workflow
-                  </button>
-                </div>
-              )}
-
-              <span className="text-[11px] text-neutral-600 tabular-nums">
-                {filtered.length.toLocaleString()} results
-              </span>
-
-              {/* Sort dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setSortOpen(!sortOpen)}
-                  className="flex items-center gap-1 text-[11px] text-neutral-400 hover:text-neutral-200 transition-colors"
-                >
-                  {sortBy}
-                  <ChevronDown className="w-3 h-3" />
-                </button>
-                {sortOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-[#0d1421] border border-white/[0.08] rounded-xl overflow-hidden shadow-xl z-20">
-                    {SORT_OPTIONS.map((opt) => (
-                      <button
-                        key={opt}
-                        onClick={() => {
-                          setSortBy(opt);
-                          setSortOpen(false);
-                        }}
-                        className={cn(
-                          "w-full text-left px-3 py-2 text-[11px] transition-colors",
-                          opt === sortBy
-                            ? "text-brand-400 bg-brand-500/10"
-                            : "text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.03]"
-                        )}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <button className="text-neutral-600 hover:text-neutral-400 transition-colors">
-                <RefreshCw className="w-3.5 h-3.5" />
-              </button>
-            </div>
+              <Pickaxe className="w-3.5 h-3.5" />
+              Go to Mining
+            </a>
           </div>
+        )}
 
-          {/* Scrollable lead grid */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-6 grid gap-4 xl:grid-cols-2">
-              {filtered.map((lead) => (
-                <LeadCard
-                  key={lead.id}
-                  lead={lead}
-                  selected={selectedIds.includes(lead.id)}
-                  onSelect={() => toggleSelect(lead.id)}
-                  onAddToWorkflow={handleAddToWorkflow}
-                />
+        {/* Lead grid */}
+        {!loading && !error && sorted.length > 0 && (
+          <div className="p-6">
+            {/* Results count */}
+            <p className="text-[11px] text-neutral-700 mb-4 tabular-nums">
+              {sorted.length.toLocaleString()} lead{sorted.length !== 1 ? "s" : ""}
+              {grade || intent || query ? " (filtered)" : ""}
+            </p>
+
+            <div className="grid gap-3 xl:grid-cols-2 2xl:grid-cols-3">
+              {sorted.map((lead) => (
+                <LeadCard key={lead.id} lead={lead} />
               ))}
-
-              {filtered.length === 0 && (
-                <div className="col-span-2 flex flex-col items-center justify-center py-24">
-                  <Filter className="w-8 h-8 text-neutral-700 mb-3" />
-                  <p className="text-neutral-500 text-sm">
-                    No leads match your search
-                  </p>
-                  <button
-                    onClick={() => setQuery("")}
-                    className="mt-3 text-[11px] text-brand-400 hover:text-brand-300 transition-colors"
-                  >
-                    Clear search
-                  </button>
-                </div>
-              )}
             </div>
 
-            {/* ── Compliance footer ── */}
-            <div className="mx-6 mb-6 p-4 rounded-xl border border-amber-500/15 bg-amber-500/[0.03]">
+            {/* Compliance */}
+            <div className="mt-6 p-4 rounded-xl border border-amber-500/12 bg-amber-500/[0.02]">
               <div className="flex items-start gap-3">
-                <Shield className="w-4 h-4 text-amber-500/70 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[11px] font-semibold text-amber-500/90 mb-1">
-                    Compliance & Data Transparency
-                  </p>
-                  <p className="text-[10px] text-neutral-600 leading-relaxed">
-                    All data is sourced from publicly available records including
-                    county assessor databases, MLS feeds, and behavioral signals.
-                    Do-Not-Contact suppression and TCPA filtering are applied by
-                    default. Users are responsible for compliance with applicable
-                    TCPA, DNC, and state regulations. Opt-out requests are
-                    processed within 24 hours. Audit logs are maintained for all
-                    contact events.
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0 bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-1.5">
-                  <Lock className="w-3 h-3 text-neutral-600" />
-                  <span className="text-[10px] text-neutral-600">Audit log</span>
-                </div>
+                <Shield className="w-3.5 h-3.5 text-amber-500/60 flex-shrink-0 mt-0.5" />
+                <p className="text-[10px] text-neutral-700 leading-relaxed">
+                  All data sourced from publicly available business records. Users are responsible for compliance with applicable TCPA, DNC, and state contact regulations.
+                </p>
               </div>
             </div>
           </div>
-        </div>
+        )}
+      </div>
+
+      {/* Miner activity indicator */}
+      <div className="flex-shrink-0 border-t border-white/[0.04] px-6 py-2.5 flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-[#00FF88] animate-pulse" />
+        <span className="text-[10px] text-neutral-700">Miners active · leads update in real time</span>
+        <Flame className="w-3 h-3 text-neutral-800 ml-auto" />
       </div>
     </div>
   );

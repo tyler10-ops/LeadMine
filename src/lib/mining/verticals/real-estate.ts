@@ -1,0 +1,48 @@
+import type { VerticalConfig } from "./base";
+
+export const realEstateVertical: VerticalConfig = {
+  id: "real-estate",
+  label: "Real Estate Leads",
+  searchQueries: [
+    "we buy houses",
+    "cash home buyers",
+    "sell my house fast",
+    "real estate investors",
+    "property investment company",
+    "homes for sale by owner",
+    "real estate investment group",
+    "sell home fast cash",
+  ],
+  placeTypes: ["real_estate_agency", "lawyer", "finance"],
+  highValueKeywords: [
+    "cash offer",
+    "no commission",
+    "sell fast",
+    "as-is",
+    "motivated seller",
+    "investment property",
+    "buy and hold",
+    "fix and flip",
+    "wholesale",
+    "off market",
+    "no realtor",
+    "quick close",
+    "foreclosure",
+    "distressed property",
+    "probate",
+  ],
+  exclusionKeywords: [
+    "closed permanently",
+    "out of business",
+    "temporarily closed",
+  ],
+  minRating: 2.5,
+  minReviews: 2,
+  scoringWeights: {
+    rating: 0.2,
+    reviewCount: 0.15,
+    websitePresence: 0.25,
+    keywordRelevance: 0.3,
+    profileCompleteness: 0.1,
+  },
+};

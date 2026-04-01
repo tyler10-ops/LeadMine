@@ -173,8 +173,10 @@ export function HousingPriceChart() {
             />
             <Tooltip
               contentStyle={tooltipStyle}
-              labelFormatter={(d: string) => formatDate(d)}
-              formatter={(value: number) => [formatTooltipPrice(value), "Median Price"]}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              labelFormatter={(d: any) => formatDate(d as string)}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              formatter={(value: any) => [formatTooltipPrice(value as number), "Median Price"]}
             />
             <Area
               type="monotone"

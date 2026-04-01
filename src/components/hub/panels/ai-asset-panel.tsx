@@ -34,7 +34,7 @@ import {
 } from "@/lib/cave-theme";
 import { GemIndicator } from "@/components/ui/gem-indicator";
 import { MiningPanel, GlowBorder } from "@/components/ui/mining-panel";
-import { GemShard, EmbeddedGem } from "@/components/ui/embedded-gem";
+import { GemShard } from "@/components/ui/embedded-gem";
 import { Gem } from "@/components/ui/gem";
 
 // ── Mock data (placeholder — replace with API calls) ──────────────────────────
@@ -124,12 +124,30 @@ function SectionHeader({
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
+import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
+import { canAccess } from "@/lib/plan-limits";
+import type { Plan } from "@/lib/plan-limits";
+
 interface AIAssetPanelProps {
   isActive: boolean;
   realtorSlug?: string;
+  plan?: Plan;
+  isUnlocked?: boolean;
 }
 
-export function AIAssetPanel({ isActive }: AIAssetPanelProps) {
+export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPanelProps) {
+  if (!(isUnlocked ?? canAccess(plan, "aiAgents"))) {
+    return (
+      <div className="h-full w-full flex items-center justify-center" style={{ background: "#000000" }}>
+        <UpgradePrompt
+          feature="AI Assets"
+          requiredPlan="Miner"
+          description="Upgrade to Miner to deploy AI voice agents, SMS bots, and booking agents that work around the clock."
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
@@ -335,8 +353,6 @@ export function AIAssetPanel({ isActive }: AIAssetPanelProps) {
                       ((e.currentTarget as HTMLElement).style.background = CAVE.surface2)
                     }
                   >
-                    <EmbeddedGem variant={scoreGem} size="xs" position="top-right" />
-
                     {/* Top row */}
                     <div className="flex items-start justify-between mb-3 relative z-10">
                       <div className="flex items-center gap-2.5">
@@ -587,7 +603,7 @@ export function AIAssetPanel({ isActive }: AIAssetPanelProps) {
               ROI Tracker
             </p>
           </div>
-          <MiningPanel carved gemAccent="green" gemPosition="top-right">
+          <MiningPanel carved>
             <div className="space-y-3">
               <div className="flex justify-between items-baseline">
                 <span className="text-[11px] text-neutral-500">Pipeline Value</span>
@@ -709,7 +725,7 @@ export function AIAssetPanel({ isActive }: AIAssetPanelProps) {
         {/* Extraction Stats */}
         <div>
           <SectionHeader>Extraction Stats</SectionHeader>
-          <MiningPanel carved gemAccent="green" gemPosition="bottom-right">
+          <MiningPanel carved>
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: "Total Runs",   value: "1,284", icon: Activity,     gem: "green"  as const },

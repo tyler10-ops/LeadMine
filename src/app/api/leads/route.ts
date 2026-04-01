@@ -96,3 +96,33 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const supabase = createServiceClient();
+    const body = await request.json() as {
+      leadId: string;
+      stage?: string;
+      last_contact_at?: string;
+    };
+
+    const { leadId, ...updates } = body;
+    if (!leadId) {
+      return NextResponse.json({ error: "leadId is required" }, { status: 400 });
+    }
+
+    const { error } = await supabase
+      .from("leads")
+      .update(updates)
+      .eq("id", leadId);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Leads PATCH error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}

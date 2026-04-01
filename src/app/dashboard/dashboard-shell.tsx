@@ -4,26 +4,24 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 
 interface DashboardShellProps {
   children: React.ReactNode;
-  realtorSlug?: string;
-  realtorName?: string;
+  businessName?: string;
 }
 
 export function DashboardShell({
   children,
-  realtorSlug,
-  realtorName,
+  businessName,
 }: DashboardShellProps) {
   return (
-    <div className="flex min-h-screen bg-neutral-50">
-      <Sidebar realtorSlug={realtorSlug} />
+    <div className="flex min-h-screen bg-neutral-950">
+      <Sidebar businessName={businessName} />
       <main className="flex-1 p-8">
-        {realtorName && (
+        {businessName && (
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-              Welcome back, {realtorName.split(" ")[0]}
+            <h1 className="text-2xl font-semibold tracking-tight text-neutral-100">
+              Welcome back, {businessName}
             </h1>
             <p className="text-sm text-neutral-500 mt-1">
-              Here&apos;s your growth overview
+              Here&apos;s your mining overview
             </p>
           </div>
         )}

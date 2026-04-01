@@ -1,3 +1,34 @@
+// ── Billing ───────────────────────────────────────────────────────────────────
+
+export type Plan = "free" | "miner" | "operator" | "brokerage";
+
+export type SubscriptionStatus =
+  | "active"
+  | "trialing"
+  | "past_due"
+  | "canceled"
+  | "unpaid"
+  | "incomplete";
+
+export interface Subscription {
+  id: string;
+  client_id: string;
+  stripe_customer_id: string;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  plan: Plan;
+  billing_interval: "month" | "year" | null;
+  status: SubscriptionStatus;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  trial_end: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Entities ──────────────────────────────────────────────────────────────────
+
 export interface Realtor {
   id: string;
   user_id: string;
@@ -9,7 +40,28 @@ export interface Realtor {
   bio: string | null;
   photo_url: string | null;
   brand_color: string;
-  plan: "free" | "pro" | "enterprise";
+  plan: Plan;
+  created_at: string;
+  updated_at: string;
+}
+
+export type ClientIndustry =
+  | "roofing"
+  | "plumbing"
+  | "hvac"
+  | "dental"
+  | "legal"
+  | "real_estate"
+  | "landscaping"
+  | "other";
+
+export interface Client {
+  id: string;
+  user_id: string;
+  business_name: string;
+  industry: ClientIndustry | null;
+  target_locations: string[];
+  plan: Plan;
   created_at: string;
   updated_at: string;
 }
@@ -32,11 +84,18 @@ export type GemGrade = "elite" | "refined" | "rock" | "ungraded";
 
 export interface Lead {
   id: string;
-  realtor_id?: string;
   client_id?: string;
   email: string;
-  name: string | null;
+  /** @deprecated Use business_name instead */
+  name?: string | null;
+  business_name: string | null;
   phone: string | null;
+  website: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  rating: number | null;
+  review_count: number | null;
   intent: "buyer" | "seller" | "investor" | "unknown" | "hot" | "warm" | "cold";
   gem_grade: GemGrade;
   company_name: string | null;
@@ -54,6 +113,12 @@ export interface Lead {
   assigned_agent_id: string | null;
   qualification: LeadQualification;
   tags: string[];
+  // Heat score fields (009_realtor_targeting migration)
+  heat_score: number;
+  heat_tier: HeatTier;
+  heat_breakdown: HeatScoreBreakdown | null;
+  heat_reasoning: string | null;
+  heat_scored_at: string | null;
 }
 
 export interface ChatMessage {
@@ -530,6 +595,196 @@ export interface NewsArticle {
 }
 
 // ============================================
+// PROPERTY INTELLIGENCE TYPES
+// ============================================
+
+export type PropertyType =
+  | "single_family"
+  | "condo"
+  | "multi_family"
+  | "townhouse"
+  | "land"
+  | "commercial"
+  | "mobile_home";
+
+export type OpportunityType = "seller" | "buyer" | "investor";
+
+export type MiningJobStatus = "queued" | "running" | "complete" | "failed" | "cancelled";
+export type MiningJobPhase = "fetching" | "scoring" | "grading" | "saving" | "complete";
+
+export type NotificationType =
+  | "mining_complete"
+  | "elite_gem_found"
+  | "mining_failed"
+  | "export_ready"
+  | "system";
+
+export interface SearchArea {
+  id: string;
+  realtor_id: string;
+  name: string;
+  zip_codes: string[];
+  cities: string[];
+  counties: string[];
+  state: string | null;
+  property_types: PropertyType[];
+  min_years_owned: number;
+  min_equity_pct: number;
+  opportunity_types: OpportunityType[];
+  last_mined_at: string | null;
+  total_leads: number;
+  created_at: string;
+  updated_at: string;
+  // Realtor targeting profile fields (009_realtor_targeting migration)
+  min_price: number | null;
+  max_price: number | null;
+  lead_type_preference: 'buyers' | 'sellers' | 'both';
+  seller_signals: string[];
+  buyer_signals: string[];
+  deal_goal: '1-2' | '3-5' | '5+';
+  is_onboarding_profile: boolean;
+}
+
+export interface MiningJob {
+  id: string;
+  realtor_id: string;
+  search_area_id: string | null;
+  queue_job_id: string | null;
+  status: MiningJobStatus;
+  phase: MiningJobPhase | null;
+  records_found: number;
+  records_graded: number;
+  records_saved: number;
+  duplicates_skipped: number;
+  elite_count: number;
+  refined_count: number;
+  rock_count: number;
+  error_message: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  // Joined
+  search_area?: SearchArea;
+}
+
+export interface Notification {
+  id: string;
+  realtor_id: string;
+  type: NotificationType;
+  title: string;
+  body: string | null;
+  metadata: Record<string, unknown>;
+  read: boolean;
+  created_at: string;
+}
+
+export interface PropertyLead extends Lead {
+  // Property location
+  property_address: string | null;
+  property_city: string | null;
+  property_state: string | null;
+  property_zip: string | null;
+  property_county: string | null;
+  property_type: PropertyType | null;
+  // Ownership
+  owner_name: string | null;
+  owner_mailing_address: string | null;
+  owner_mailing_city: string | null;
+  owner_mailing_state: string | null;
+  owner_mailing_zip: string | null;
+  is_absentee_owner: boolean;
+  is_owner_occupied: boolean;
+  years_owned: number | null;
+  // Transaction history
+  last_sale_date: string | null;
+  last_sale_price: number | null;
+  assessed_value: number | null;
+  estimated_value: number | null;
+  estimated_equity: number | null;
+  equity_percent: number | null;
+  // Opportunity scoring
+  opportunity_type: OpportunityType | null;
+  opportunity_score: number;
+  signal_flags: string[];
+  // Data provenance
+  data_source: string;
+  external_property_id: string | null;
+  raw_property_data: Record<string, unknown> | null;
+  search_area_id: string | null;
+}
+
+export interface PropertySignalBreakdown {
+  score: number;
+  grade: GemGrade;
+  opportunity_type: OpportunityType;
+  flags: string[];
+  reasons: string[];
+}
+
+export interface LeadExport {
+  id: string;
+  realtor_id: string;
+  lead_ids: string[];
+  export_type: "csv" | "json";
+  filters_used: Record<string, unknown>;
+  record_count: number;
+  exported_at: string;
+}
+
+// ============================================
+// CREATIVE AGENT TYPES
+// ============================================
+
+export type CreativeLeadType = "buyers" | "sellers" | "both";
+export type CreativeAdPlatform = "meta" | "google" | "instagram" | "tiktok";
+export type CreativeJobStatus =
+  | "pending"
+  | "generating_copy"
+  | "generating_images"
+  | "complete"
+  | "error";
+
+export interface CreativeCopySet {
+  headlines: string[];    // 5 variants, ~40 chars for Meta
+  primaryText: string[];  // 3 body copy variants
+  ctas: string[];         // 2 CTA options
+  localHook: string;      // data-driven insight line
+}
+
+export interface CreativeImageVariant {
+  url: string;
+  prompt: string;
+  style: "aerial" | "lifestyle" | "text_overlay";
+  status: "generated" | "pending" | "error";
+}
+
+export interface AdCreative {
+  id: string;
+  client_id: string;
+  county: string;
+  state: string;
+  lead_type: CreativeLeadType;
+  equity_band: string;
+  property_type: string;
+  lead_count: number;
+  copy: CreativeCopySet;
+  images: CreativeImageVariant[];
+  platforms: CreativeAdPlatform[];
+  status: CreativeJobStatus;
+  created_at: string;
+}
+
+export interface CreativeGenerateRequest {
+  county: string;
+  state: string;
+  leadType: CreativeLeadType;
+  equityBand: string;
+  propertyType: string;
+  leadCount: number;
+  avgYearsOwned?: number;
+}
+
+// ============================================
 // FRED API TYPES
 // ============================================
 
@@ -543,4 +798,49 @@ export interface FredSeriesData {
   title: string;
   observations: FredObservation[];
   lastUpdated: string;
+}
+
+// ============================================
+// HEAT SCORE TYPES
+// ============================================
+
+export type HeatTier = 'cold' | 'warm' | 'hot' | 'diamond';
+
+export interface HeatScoreBreakdown {
+  location_match: number;       // max 20
+  property_intent: number;      // max 25
+  recent_activity: number;      // max 20
+  property_value: number;       // max 10
+  contact_completeness: number; // max 10
+  market_competition: number;   // max 5
+  behavior_signals: number;     // max 10
+}
+
+export interface HeatScoreResult {
+  score: number;
+  tier: HeatTier;
+  breakdown: HeatScoreBreakdown;
+  reasoning: string;
+}
+
+// ============================================
+// OUTREACH TYPES
+// ============================================
+
+export type OutreachChannel = 'email' | 'sms' | 'call_script';
+export type OutreachTone = 'professional' | 'casual' | 'urgent';
+export type OutreachStatus = 'draft' | 'approved' | 'sent' | 'rejected';
+
+export interface OutreachDraft {
+  id: string;
+  realtor_id: string;
+  lead_id: string;
+  subject: string | null;
+  body: string;
+  channel: OutreachChannel;
+  tone: OutreachTone;
+  status: OutreachStatus;
+  ai_model: string | null;
+  created_at: string;
+  updated_at: string;
 }

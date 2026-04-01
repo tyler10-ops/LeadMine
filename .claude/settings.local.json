@@ -7,7 +7,9 @@
       "Bash(lsof:*)",
       "Bash(npm run dev:*)",
       "Bash(PATH=/usr/local/bin:$PATH /usr/local/bin/npm run dev:*)",
-      "Bash(/usr/local/bin/npx tsc:*)"
+      "Bash(/usr/local/bin/npx tsc:*)",
+      "Bash(vercel --version)",
+      "Bash(grep -l \"outreach\" /Users/tylerd/Projects/real-estate-autopilot/supabase/migrations/*.sql)"
     ]
   }
 }

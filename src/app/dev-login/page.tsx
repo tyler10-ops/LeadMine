@@ -26,8 +26,8 @@ export default function DevLoginPage() {
       await supabase.auth.signOut();
 
       const { error } = await supabase.auth.signInWithPassword({
-        email: "test@realestate-autopilot.dev",
-        password: "testdev123456",
+        email: "tyler10@airsist.com",
+        password: "devpass123",
       });
 
       if (error) {

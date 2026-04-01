@@ -571,9 +571,10 @@ export function MarketIntelligence() {
               />
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(value: number, name: string) => [
-                  metricConfig.format(value),
-                  name === "value" ? stateLabel : "National Avg",
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(value: any, name: any) => [
+                  metricConfig.format(value as number),
+                  (name as string) === "value" ? stateLabel : "National Avg",
                 ]}
               />
               <ReferenceLine

@@ -13,6 +13,8 @@
  *   SUPABASE_SERVICE_ROLE_KEY
  */
 
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 import { getMiningQueue } from "../src/lib/queue/queues";
 import { closeRedisConnection } from "../src/lib/queue/connection";
 

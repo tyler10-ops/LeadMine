@@ -3,7 +3,7 @@
 -- ============================================
 
 -- Realtors
-CREATE TABLE realtors (
+CREATE TABLE IF NOT EXISTS realtors (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -19,11 +19,11 @@ CREATE TABLE realtors (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_realtors_slug ON realtors(slug);
-CREATE INDEX idx_realtors_user_id ON realtors(user_id);
+CREATE INDEX IF NOT EXISTS idx_realtors_slug ON realtors(slug);
+CREATE INDEX IF NOT EXISTS idx_realtors_user_id ON realtors(user_id);
 
 -- Leads
-CREATE TABLE leads (
+CREATE TABLE IF NOT EXISTS leads (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   realtor_id UUID NOT NULL REFERENCES realtors(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
@@ -36,12 +36,12 @@ CREATE TABLE leads (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_leads_realtor ON leads(realtor_id);
-CREATE INDEX idx_leads_intent ON leads(intent);
-CREATE INDEX idx_leads_created ON leads(created_at);
+CREATE INDEX IF NOT EXISTS idx_leads_realtor ON leads(realtor_id);
+CREATE INDEX IF NOT EXISTS idx_leads_intent ON leads(intent);
+CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at);
 
 -- Conversations
-CREATE TABLE conversations (
+CREATE TABLE IF NOT EXISTS conversations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   realtor_id UUID NOT NULL REFERENCES realtors(id) ON DELETE CASCADE,
   lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
@@ -53,10 +53,10 @@ CREATE TABLE conversations (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_conversations_realtor ON conversations(realtor_id);
+CREATE INDEX IF NOT EXISTS idx_conversations_realtor ON conversations(realtor_id);
 
 -- Events (page views, chat starts, etc.)
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   realtor_id UUID NOT NULL REFERENCES realtors(id) ON DELETE CASCADE,
   type TEXT NOT NULL CHECK (type IN ('page_view', 'chat_start', 'lead_capture', 'content_view')),
@@ -64,12 +64,12 @@ CREATE TABLE events (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_events_realtor ON events(realtor_id);
-CREATE INDEX idx_events_type ON events(type);
-CREATE INDEX idx_events_created ON events(created_at);
+CREATE INDEX IF NOT EXISTS idx_events_realtor ON events(realtor_id);
+CREATE INDEX IF NOT EXISTS idx_events_type ON events(type);
+CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at);
 
 -- Market content
-CREATE TABLE content (
+CREATE TABLE IF NOT EXISTS content (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   realtor_id UUID NOT NULL REFERENCES realtors(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
@@ -79,10 +79,10 @@ CREATE TABLE content (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_content_realtor ON content(realtor_id);
+CREATE INDEX IF NOT EXISTS idx_content_realtor ON content(realtor_id);
 
 -- Daily metrics (aggregated)
-CREATE TABLE daily_metrics (
+CREATE TABLE IF NOT EXISTS daily_metrics (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   realtor_id UUID NOT NULL REFERENCES realtors(id) ON DELETE CASCADE,
   date DATE NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE daily_metrics (
   UNIQUE(realtor_id, date)
 );
 
-CREATE INDEX idx_daily_metrics_realtor_date ON daily_metrics(realtor_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_metrics_realtor_date ON daily_metrics(realtor_id, date);
 
 -- Row Level Security
 ALTER TABLE realtors ENABLE ROW LEVEL SECURITY;
@@ -104,6 +104,22 @@ ALTER TABLE conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE daily_metrics ENABLE ROW LEVEL SECURITY;
+
+-- Drop policies if they exist before recreating (makes migration idempotent)
+DO $$ BEGIN
+  DROP POLICY IF EXISTS "realtors_own" ON realtors;
+  DROP POLICY IF EXISTS "realtors_public_read" ON realtors;
+  DROP POLICY IF EXISTS "leads_own" ON leads;
+  DROP POLICY IF EXISTS "leads_insert" ON leads;
+  DROP POLICY IF EXISTS "conversations_own" ON conversations;
+  DROP POLICY IF EXISTS "conversations_anon_insert" ON conversations;
+  DROP POLICY IF EXISTS "conversations_anon_update" ON conversations;
+  DROP POLICY IF EXISTS "events_insert" ON events;
+  DROP POLICY IF EXISTS "events_own" ON events;
+  DROP POLICY IF EXISTS "content_own" ON content;
+  DROP POLICY IF EXISTS "content_public_read" ON content;
+  DROP POLICY IF EXISTS "daily_metrics_own" ON daily_metrics;
+END $$;
 
 -- Realtors: users can only see/edit their own
 CREATE POLICY "realtors_own" ON realtors

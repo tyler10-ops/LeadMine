@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/daily-brief",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/send-outreach",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/sales/outreach",
+      "schedule": "0 13 * * *"
+    }
+  ]
+}

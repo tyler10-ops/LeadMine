@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Gem Mine — Lead Mining Command Center",
+  title: "LeadMine — AI-Powered Lead Mining for Realtors",
   description:
-    "AI-powered lead mining for operators who demand precision. Raw inquiries enter as rough stone. Only gems come out.",
+    "LeadMine finds, scores, and prioritizes your best real estate leads automatically. Mine smarter. Close faster.",
 };
 
 export default function RootLayout({
