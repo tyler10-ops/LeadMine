@@ -226,9 +226,18 @@ async function animateImage(imageUrl: string, prompt: string): Promise<string | 
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-// ── Entry point ────────────────────────────────────────────────────────────
+// ── Entry point — runs once then loops every 6 hours ──────────────────────
 
-run().catch(err => {
-  console.error("Creative worker crashed:", err);
-  process.exit(1);
-});
+const INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+async function loop() {
+  while (true) {
+    await run().catch(err => {
+      console.error("Creative worker run failed:", err);
+    });
+    console.log(`\n[scheduler] Next run in 6 hours — ${new Date(Date.now() + INTERVAL_MS).toLocaleString()}\n`);
+    await sleep(INTERVAL_MS);
+  }
+}
+
+loop();
