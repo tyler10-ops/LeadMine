@@ -287,6 +287,7 @@ const INITIAL_LEADS = [
     propertyType: "multi_family",
     yearsOwned: 31,
     equityPercent: 92,
+    estimatedValue: 680000,
     isAbsenteeOwner: true,
     score: 100,
     grade: "elite" as const,
@@ -304,6 +305,7 @@ const INITIAL_LEADS = [
     propertyType: "townhouse",
     yearsOwned: 26,
     equityPercent: 88,
+    estimatedValue: 820000,
     isAbsenteeOwner: true,
     score: 95,
     grade: "elite" as const,
@@ -321,6 +323,7 @@ const INITIAL_LEADS = [
     propertyType: "single_family",
     yearsOwned: 18,
     equityPercent: 74,
+    estimatedValue: 545000,
     isAbsenteeOwner: false,
     score: 91,
     grade: "elite" as const,
@@ -338,6 +341,7 @@ const INITIAL_LEADS = [
     propertyType: "condo",
     yearsOwned: 22,
     equityPercent: 81,
+    estimatedValue: 310000,
     isAbsenteeOwner: true,
     score: 88,
     grade: "elite" as const,
@@ -355,6 +359,7 @@ const INITIAL_LEADS = [
     propertyType: "single_family",
     yearsOwned: 13,
     equityPercent: 52,
+    estimatedValue: 390000,
     isAbsenteeOwner: false,
     score: 67,
     grade: "refined" as const,
@@ -372,6 +377,7 @@ const INITIAL_LEADS = [
     propertyType: "single_family",
     yearsOwned: 9,
     equityPercent: 44,
+    estimatedValue: 445000,
     isAbsenteeOwner: false,
     score: 48,
     grade: "refined" as const,
@@ -389,6 +395,7 @@ const INITIAL_LEADS = [
     propertyType: "single_family",
     yearsOwned: 7,
     equityPercent: 31,
+    estimatedValue: 275000,
     isAbsenteeOwner: false,
     score: 28,
     grade: "rock" as const,
@@ -416,6 +423,7 @@ interface DbLead {
   gem_grade?: string;
   signal_flags?: string[];
   stage?: string;
+  estimated_value?: number;
   created_at?: string;
 }
 
@@ -430,6 +438,7 @@ function dbLeadToPropertyLead(l: DbLead): PropertyLead {
     propertyType:    l.property_type ?? "single_family",
     yearsOwned:      l.years_owned ?? 0,
     equityPercent:   Math.round(l.equity_percent ?? 0),
+    estimatedValue:  l.estimated_value ?? 0,
     isAbsenteeOwner: l.is_absentee_owner ?? false,
     score:           l.opportunity_score ?? 0,
     grade:           (l.gem_grade as "elite" | "refined" | "rock") ?? "rock",
@@ -871,6 +880,62 @@ function PropertyLeadCard({
           </span>
         )}
       </div>
+
+      {/* Value & Equity report */}
+      {lead.estimatedValue > 0 && (
+        <div className="mx-3.5 mt-2.5 rounded-xl p-2.5" style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneMid}` }}>
+          <p className="text-[9px] font-semibold text-neutral-600 uppercase tracking-widest mb-2">AI Grade Report</p>
+          <div className="grid grid-cols-3 gap-2 mb-2.5">
+            <div>
+              <p className="text-[9px] text-neutral-600 mb-0.5">Est. Value</p>
+              <p className="text-[12px] font-bold text-neutral-100">
+                ${lead.estimatedValue >= 1000000
+                  ? `${(lead.estimatedValue / 1000000).toFixed(1)}M`
+                  : `${Math.round(lead.estimatedValue / 1000)}k`}
+              </p>
+            </div>
+            <div>
+              <p className="text-[9px] text-neutral-600 mb-0.5">Equity Est.</p>
+              <p className="text-[12px] font-bold" style={{ color: GEM.yellow }}>
+                ${Math.round(lead.estimatedValue * lead.equityPercent / 100 / 1000)}k
+              </p>
+            </div>
+            <div>
+              <p className="text-[9px] text-neutral-600 mb-0.5">Opportunity</p>
+              <p className="text-[12px] font-bold" style={{ color: gradeConfig.color }}>{gradeConfig.label}</p>
+            </div>
+          </div>
+          {/* Scoring factors */}
+          <div className="space-y-1.5">
+            {/* Ownership tenure */}
+            <div className="flex items-center gap-2">
+              <p className="text-[9px] text-neutral-600 w-20 shrink-0">Ownership</p>
+              <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: CAVE.stoneMid }}>
+                <div className="h-full rounded-full" style={{ width: `${Math.min(lead.yearsOwned / 30 * 100, 100)}%`, background: lead.yearsOwned >= 20 ? GEM.green : lead.yearsOwned >= 10 ? GEM.yellow : GEM.red }} />
+              </div>
+              <p className="text-[9px] font-semibold text-neutral-400 w-10 text-right shrink-0">{lead.yearsOwned} yrs</p>
+            </div>
+            {/* Equity */}
+            <div className="flex items-center gap-2">
+              <p className="text-[9px] text-neutral-600 w-20 shrink-0">Equity</p>
+              <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: CAVE.stoneMid }}>
+                <div className="h-full rounded-full" style={{ width: `${lead.equityPercent}%`, background: lead.equityPercent >= 70 ? GEM.green : lead.equityPercent >= 40 ? GEM.yellow : GEM.red }} />
+              </div>
+              <p className="text-[9px] font-semibold text-neutral-400 w-10 text-right shrink-0">{lead.equityPercent}%</p>
+            </div>
+            {/* Occupancy */}
+            <div className="flex items-center gap-2">
+              <p className="text-[9px] text-neutral-600 w-20 shrink-0">Occupancy</p>
+              <div className="flex-1 h-1 rounded-full overflow-hidden" style={{ background: CAVE.stoneMid }}>
+                <div className="h-full rounded-full" style={{ width: lead.isAbsenteeOwner ? "90%" : "40%", background: lead.isAbsenteeOwner ? GEM.green : GEM.yellow }} />
+              </div>
+              <p className="text-[9px] font-semibold w-10 text-right shrink-0" style={{ color: lead.isAbsenteeOwner ? GEM.green : "#a3a3a3" }}>
+                {lead.isAbsenteeOwner ? "Absent" : "Owner"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Signal flags + stage (clickable) */}
       <div className="flex flex-wrap gap-1 px-3.5 pt-2 items-center">
