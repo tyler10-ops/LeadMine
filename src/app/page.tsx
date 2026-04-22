@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight, Cpu, Activity, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { CyclingWord } from "@/components/landing/cycling-word";
 import { Gem } from "@/components/ui/gem";
@@ -53,7 +54,10 @@ const LIVE_FEED = [
   { time: "1:38", label: "Refined potential flagged", color: GEM.yellow  },
 ];
 
-export default async function LandingPage() {
+export default async function LandingPage({ searchParams }: { searchParams: Promise<{ code?: string }> }) {
+  const params = await searchParams;
+  if (params.code) redirect(`/auth/callback?code=${params.code}`);
+
   const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   const isAuthenticated = !!user;

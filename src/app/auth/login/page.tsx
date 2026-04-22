@@ -42,7 +42,7 @@ export default function LoginPage() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `https://leadmineapp.com/auth/callback` },
+      options: { redirectTo: `https://www.leadmineapp.com/auth/callback` },
     });
   };
 
