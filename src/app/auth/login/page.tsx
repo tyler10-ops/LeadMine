@@ -57,8 +57,8 @@ export default function LoginPage() {
       <div className="w-full max-w-[360px] relative z-10">
 
         {/* Logo */}
-        <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <img src="/logo.png" alt="LeadMine" className="w-16 h-16 object-contain" />
+        <Link href="/" className="flex items-center justify-center gap-1 mb-10">
+          <img src="/logo.png" alt="LeadMine" className="w-[68px] h-[68px] object-contain" />
           <span className="text-[15px] font-bold tracking-tight text-neutral-100">Lead Mine</span>
         </Link>
 

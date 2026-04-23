@@ -68,8 +68,8 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
 
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-8 py-5 max-w-7xl mx-auto relative z-20">
-        <Link href="/" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="LeadMine" className="w-16 h-16 object-contain" />
+        <Link href="/" className="flex items-center gap-1">
+          <img src="/logo.png" alt="LeadMine" className="w-[68px] h-[68px] object-contain" />
           <div>
             <span className="text-sm font-bold tracking-[0.15em] text-neutral-100 uppercase">Lead</span>
             <span className="text-[10px] font-medium text-neutral-600 tracking-[0.3em] uppercase ml-1.5">MINE</span>

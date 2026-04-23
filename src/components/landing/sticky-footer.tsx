@@ -22,7 +22,7 @@ export function StickyFooter() {
       }}
     >
       <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1">
           <img src="/logo.png" alt="LeadMine" className="w-9 h-9 object-contain" />
           <span className="text-xs font-bold tracking-[0.15em] text-neutral-600 uppercase">LEADMINE</span>
         </div>

@@ -102,14 +102,14 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
         )}
       >
         {/* Brand */}
-        <div className={cn("flex items-center h-[52px] border-b border-white/[0.04] flex-shrink-0", sidebarOpen ? "px-4 gap-2.5" : "justify-center px-0")}>
+        <div className={cn("flex items-center h-[52px] border-b border-white/[0.04] flex-shrink-0", sidebarOpen ? "px-4 gap-1" : "justify-center px-0")}>
           <button
             onClick={handleLogoClick}
             className="relative w-7 h-7 flex items-center justify-center focus:outline-none flex-shrink-0"
           >
             {adminMode
               ? <span className="text-[#FFD60A] text-[14px]">★</span>
-              : <img src="/logo.png" alt="LeadMine" className="w-14 h-14 object-contain" />
+              : <img src="/logo.png" alt="LeadMine" className="w-[58px] h-[58px] object-contain" />
             }
           </button>
           {sidebarOpen && (
