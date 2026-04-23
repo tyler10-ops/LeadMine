@@ -58,7 +58,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <img src="/logo.png" alt="LeadMine" className="w-10 h-10 object-contain" style={{ mixBlendMode: "lighten" }} />
+          <img src="/logo.png" alt="LeadMine" className="w-12 h-12 object-contain" />
           <span className="text-[15px] font-bold tracking-tight text-neutral-100">Lead Mine</span>
         </Link>
 
