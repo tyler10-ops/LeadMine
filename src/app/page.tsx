@@ -6,6 +6,7 @@ import { Gem } from "@/components/ui/gem";
 import { GemGrade } from "@/components/ui/gem-grade";
 import { MiningProgress } from "@/components/ui/mining-progress";
 import { PricingSection } from "@/components/landing/pricing-section";
+import { StickyFooter } from "@/components/landing/sticky-footer";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 const GEM = { green: "#00FF88", yellow: "#FFD60A", red: "#FF3B30" };
@@ -493,17 +494,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t py-8" style={{ borderColor: "rgba(255,255,255,0.05)", background: "#07070d" }}>
-        <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="LeadMine" className="w-8 h-8 object-contain" />
-            <span className="text-xs font-bold tracking-[0.15em] text-neutral-600 uppercase">LEADMINE</span>
-          </div>
-          <p className="text-xs text-neutral-700">
-            &copy; {new Date().getFullYear()} LeadMine. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      <StickyFooter />
 
     </div>
   );
