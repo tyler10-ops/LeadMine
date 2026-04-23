@@ -21,7 +21,11 @@
 import path from "path";
 import fs   from "fs";
 import dotenv from "dotenv";
-dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
+
+// Resolve env file — absolute path is reliable under PM2 regardless of cwd
+const PROJECT_ROOT = "/Users/leadmine/leadmine";
+dotenv.config({ path: path.join(PROJECT_ROOT, ".env.local") });
+dotenv.config({ path: path.join(PROJECT_ROOT, ".env") }); // fallback
 
 import { createClient }         from "@supabase/supabase-js";
 import { generateContentPlan }  from "../src/lib/creative/content-plan";

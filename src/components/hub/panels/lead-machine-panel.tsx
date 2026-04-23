@@ -36,6 +36,9 @@ import {
 import { MiningPanel, GlowBorder } from "@/components/ui/mining-panel";
 import { GemShard } from "@/components/ui/embedded-gem";
 import { Gem } from "@/components/ui/gem";
+import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
+import { canAccess } from "@/lib/plan-limits";
+import type { Plan } from "@/lib/plan-limits";
 
 // ── US Counties registry ──────────────────────────────────────────────────────
 
@@ -1039,9 +1042,6 @@ function PropertyLeadCard({
 
 // ── Main Component ─────────────────────────────────────────────────────────────
 
-import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
-import { canAccess } from "@/lib/plan-limits";
-import type { Plan } from "@/lib/plan-limits";
 
 interface LeadMachinePanelProps {
   isActive: boolean;
@@ -1118,12 +1118,12 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [miningStatus]);
 
+  // ── Lead actions ──────────────────────────────────────────────────────────
+  const [leadStages, setLeadStages]           = useState<Record<string, string>>({});
+
   // Use real leads if available, fall back to mock
   const ALL_LEADS = dbLeads.length > 0 ? dbLeads : INITIAL_LEADS;
   const newLeadsCount = ALL_LEADS.filter(l => (leadStages[l.id] ?? l.stage) === "new").length;
-
-  // ── Lead actions ──────────────────────────────────────────────────────────
-  const [leadStages, setLeadStages]           = useState<Record<string, string>>({});
   const [callingLead, setCallingLead]         = useState<PropertyLead | null>(null);
   const [callDuration, setCallDuration]       = useState(0);
   const [composeLead, setComposeLead]         = useState<{ lead: PropertyLead; type: "sms" | "email" } | null>(null);

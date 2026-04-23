@@ -109,7 +109,7 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
           >
             {adminMode
               ? <span className="text-[#FFD60A] text-[14px]">★</span>
-              : <img src="/logo.png" alt="LeadMine" className="w-7 h-7 object-contain" style={{ mixBlendMode: "screen" }} />
+              : <img src="/logo.png" alt="LeadMine" className="w-9 h-9 object-contain" style={{ mixBlendMode: "lighten" }} />
             }
           </button>
           {sidebarOpen && (

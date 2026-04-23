@@ -19,7 +19,6 @@ ALTER TABLE notification_preferences ENABLE ROW LEVEL SECURITY;
 
 DO $$ BEGIN
   DROP POLICY IF EXISTS "Realtors manage own notification prefs" ON notification_preferences;
-  DROP POLICY IF EXISTS "Realtors manage own push subscriptions" ON push_subscriptions;
 END $$;
 
 CREATE POLICY "Realtors manage own notification prefs" ON notification_preferences

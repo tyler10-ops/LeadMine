@@ -68,7 +68,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
       {/* ── NAV ── */}
       <nav className="flex items-center justify-between px-8 py-5 max-w-7xl mx-auto relative z-20">
         <Link href="/" className="flex items-center gap-2.5">
-          <img src="/logo.png" alt="LeadMine" className="w-8 h-8 object-contain" style={{ mixBlendMode: "screen" }} />
+          <img src="/logo.png" alt="LeadMine" className="w-10 h-10 object-contain" style={{ mixBlendMode: "lighten" }} />
           <div>
             <span className="text-sm font-bold tracking-[0.15em] text-neutral-100 uppercase">Lead</span>
             <span className="text-[10px] font-medium text-neutral-600 tracking-[0.3em] uppercase ml-1.5">MINE</span>
@@ -496,7 +496,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
       <footer className="border-t py-8" style={{ borderColor: "rgba(255,255,255,0.05)", background: "#07070d" }}>
         <div className="max-w-7xl mx-auto px-8 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="LeadMine" className="w-6 h-6 object-contain" style={{ mixBlendMode: "screen" }} />
+            <img src="/logo.png" alt="LeadMine" className="w-7 h-7 object-contain" style={{ mixBlendMode: "lighten" }} />
             <span className="text-xs font-bold tracking-[0.15em] text-neutral-600 uppercase">LEADMINE</span>
           </div>
           <p className="text-xs text-neutral-700">

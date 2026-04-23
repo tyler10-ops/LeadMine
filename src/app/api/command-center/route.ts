@@ -1,102 +1,92 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: realtor } = await supabase
-      .from("realtors")
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { data: client } = await supabase
+      .from("clients")
       .select("id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (!realtor) return NextResponse.json({ error: "Realtor not found" }, { status: 404 });
+    const clientId = client?.id ?? null;
 
-    const realtorId = realtor.id;
+    // Stage counts
+    const stageCounts = { new: 0, contacted: 0, qualified: 0, booked: 0, dead: 0 };
+    if (clientId) {
+      const { data: stageRows } = await supabase
+        .from("leads").select("stage").eq("client_id", clientId);
+      for (const row of stageRows ?? []) {
+        const s = (row.stage ?? "new") as keyof typeof stageCounts;
+        if (s in stageCounts) stageCounts[s]++;
+      }
+    }
 
-    const [leadsResult, miningResult, outreachResult] = await Promise.all([
-      supabase
-        .from("leads")
-        .select("stage, heat_tier, last_contact_at, created_at")
-        .or(`realtor_id.eq.${realtorId},client_id.eq.${realtorId}`),
+    // Tier counts
+    const tierCounts = { diamond: 0, hot: 0, warm: 0, cold: 0, total: 0 };
+    if (clientId) {
+      const { data: tierRows } = await supabase
+        .from("leads").select("gem_grade").eq("client_id", clientId);
+      for (const row of tierRows ?? []) {
+        tierCounts.total++;
+        const grade = row.gem_grade ?? "rock";
+        if (grade === "elite")        tierCounts.diamond++;
+        else if (grade === "refined") tierCounts.hot++;
+        else if (grade === "rock")    tierCounts.warm++;
+        else                          tierCounts.cold++;
+      }
+    }
 
-      supabase
-        .from("mining_jobs")
-        .select("status, elite_count, refined_count, rock_count, records_saved, completed_at, created_at")
-        .eq("realtor_id", realtorId)
-        .order("created_at", { ascending: false })
-        .limit(10),
-
-      supabase
-        .from("outreach_drafts")
-        .select("status, created_at")
-        .eq("realtor_id", realtorId)
-        .gte("created_at", new Date(Date.now() - 30 * 86400000).toISOString()),
-    ]);
-
-    const leads = leadsResult.data ?? [];
-    const jobs = miningResult.data ?? [];
-    const drafts = outreachResult.data ?? [];
-
-    // Pipeline stage counts
-    const stageCounts = {
-      new:       leads.filter((l) => l.stage === "new" || !l.stage).length,
-      contacted: leads.filter((l) => l.stage === "contacted").length,
-      qualified: leads.filter((l) => l.stage === "qualified").length,
-      booked:    leads.filter((l) => l.stage === "booked").length,
-      dead:      leads.filter((l) => l.stage === "dead").length,
-    };
-
-    // Heat tier counts
-    const tierCounts = {
-      diamond: leads.filter((l) => l.heat_tier === "diamond").length,
-      hot:     leads.filter((l) => l.heat_tier === "hot").length,
-      warm:    leads.filter((l) => l.heat_tier === "warm").length,
-      cold:    leads.filter((l) => l.heat_tier === "cold").length,
-      total:   leads.length,
-    };
-
-    // Mining stats (last 30 days)
-    const thirtyDaysAgo = Date.now() - 30 * 86400000;
-    const recentJobs = jobs.filter(
-      (j) => j.completed_at && new Date(j.completed_at).getTime() > thirtyDaysAgo
-    );
-    const gemsMined = recentJobs.reduce((sum, j) => sum + (j.records_saved ?? 0), 0);
-    const eliteMined = recentJobs.reduce((sum, j) => sum + (j.elite_count ?? 0), 0);
-    const lastJob = jobs[0] ?? null;
+    // Mining stats
+    const mining = { gemsMined: tierCounts.total, eliteMined: tierCounts.diamond, totalRuns: 0, lastRunAt: null as string | null, lastRunStatus: null as string | null };
+    if (clientId) {
+      const { data: lastRun } = await supabase
+        .from("activity_log").select("created_at, severity")
+        .eq("client_id", clientId).eq("event_type", "mine_completed")
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (lastRun) { mining.lastRunAt = lastRun.created_at; mining.lastRunStatus = lastRun.severity; }
+      const { count } = await supabase
+        .from("activity_log").select("id", { count: "exact", head: true })
+        .eq("client_id", clientId).eq("event_type", "mine_completed");
+      mining.totalRuns = count ?? 0;
+    }
 
     // Outreach stats
-    const approvedDrafts = drafts.filter((d) => d.status === "approved" || d.status === "sent").length;
+    const outreach = { draftsThisMonth: 0, approvedThisMonth: 0 };
+    if (clientId) {
+      const startOfMonth = new Date(); startOfMonth.setDate(1); startOfMonth.setHours(0,0,0,0);
+      const { count: drafts } = await supabase
+        .from("follow_up_activities").select("id", { count: "exact", head: true })
+        .eq("realtor_id", clientId).gte("created_at", startOfMonth.toISOString());
+      const { count: approved } = await supabase
+        .from("follow_up_activities").select("id", { count: "exact", head: true })
+        .eq("realtor_id", clientId).eq("status", "sent").gte("created_at", startOfMonth.toISOString());
+      outreach.draftsThisMonth = drafts ?? 0;
+      outreach.approvedThisMonth = approved ?? 0;
+    }
 
-    // Leads needing follow-up (contacted but no touch in 48h+)
-    const fortyEightH = Date.now() - 48 * 60 * 60 * 1000;
-    const needsFollowUp = leads.filter((l) => {
-      if (l.stage === "qualified" || l.stage === "booked" || l.stage === "dead") return false;
-      if (!l.last_contact_at) return l.stage === "contacted";
-      return new Date(l.last_contact_at).getTime() < fortyEightH;
-    }).length;
+    // Needs follow-up
+    let needsFollowUp = 0;
+    if (clientId) {
+      const { count } = await supabase
+        .from("leads").select("id", { count: "exact", head: true })
+        .eq("client_id", clientId).eq("stage", "new");
+      needsFollowUp = count ?? 0;
+    }
 
-    return NextResponse.json({
-      stageCounts,
-      tierCounts,
-      mining: {
-        gemsMined,
-        eliteMined,
-        totalRuns: jobs.length,
-        lastRunAt: lastJob?.completed_at ?? null,
-        lastRunStatus: lastJob?.status ?? null,
-      },
-      outreach: {
-        draftsThisMonth: drafts.length,
-        approvedThisMonth: approvedDrafts,
-      },
-      needsFollowUp,
-    });
+    return NextResponse.json({ stageCounts, tierCounts, mining, outreach, needsFollowUp });
+
   } catch (err) {
-    console.error("[command-center] error:", err);
+    console.error("[command-center] Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

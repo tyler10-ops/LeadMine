@@ -16,7 +16,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { BRAND, type ContentType, type Platform } from "./brand-config";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export interface ContentPlan {
   id:           string;
@@ -132,6 +131,7 @@ Return a JSON array of exactly ${count} objects. Each object:
 Return only the JSON array. No markdown fences, no explanation.
 `.trim();
 
+  const anthropic = new Anthropic();
   const response = await anthropic.messages.create({
     model:      "claude-opus-4-5-20251101",
     max_tokens: 6000,

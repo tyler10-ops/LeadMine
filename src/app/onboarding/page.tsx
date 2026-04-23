@@ -277,7 +277,7 @@ export default function OnboardingPage() {
 
         {/* Brand */}
         <div className="text-center mb-10">
-          <img src="/logo.png" alt="LeadMine" className="w-12 h-12 object-contain mb-4" style={{ mixBlendMode: "screen" }} />
+          <img src="/logo.png" alt="LeadMine" className="w-14 h-14 object-contain mb-4" style={{ mixBlendMode: "lighten" }} />
           <h1 className="text-[22px] font-bold text-neutral-100 tracking-tight">
             Set up your mine
           </h1>

@@ -1,5 +1,6 @@
 import { createServerSupabase } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { Suspense } from "react";
 import { HubShell } from "@/app/dashboard/hub-shell";
 import type { Plan } from "@/lib/plan-limits";
 
@@ -23,11 +24,13 @@ export default async function HubPage() {
   if (!client && !realtor) redirect("/onboarding");
 
   return (
-    <HubShell
-      clientId={client?.id ?? realtor?.id}
-      businessName={client?.business_name ?? realtor?.name ?? "LeadMine"}
-      industry={client?.industry ?? "real_estate"}
-      plan={(client?.plan ?? realtor?.plan ?? "free") as Plan}
-    />
+    <Suspense>
+      <HubShell
+        clientId={client?.id ?? realtor?.id}
+        businessName={client?.business_name ?? realtor?.name ?? "LeadMine"}
+        industry={client?.industry ?? "real_estate"}
+        plan={(client?.plan ?? realtor?.plan ?? "free") as Plan}
+      />
+    </Suspense>
   );
 }

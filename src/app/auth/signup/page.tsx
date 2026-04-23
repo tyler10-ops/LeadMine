@@ -129,7 +129,7 @@ function SignupForm() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <img src="/logo.png" alt="LeadMine" className="w-8 h-8 object-contain" style={{ mixBlendMode: "screen" }} />
+          <img src="/logo.png" alt="LeadMine" className="w-10 h-10 object-contain" style={{ mixBlendMode: "lighten" }} />
           <span className="text-[15px] font-bold tracking-tight text-neutral-100">Lead Mine</span>
         </Link>
 

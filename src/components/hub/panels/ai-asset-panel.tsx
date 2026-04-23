@@ -36,6 +36,9 @@ import { GemIndicator } from "@/components/ui/gem-indicator";
 import { MiningPanel, GlowBorder } from "@/components/ui/mining-panel";
 import { GemShard } from "@/components/ui/embedded-gem";
 import { Gem } from "@/components/ui/gem";
+import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
+import { canAccess } from "@/lib/plan-limits";
+import type { Plan } from "@/lib/plan-limits";
 
 // ── Mock data (placeholder — replace with API calls) ──────────────────────────
 
@@ -123,10 +126,6 @@ function SectionHeader({
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-
-import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
-import { canAccess } from "@/lib/plan-limits";
-import type { Plan } from "@/lib/plan-limits";
 
 interface AIAssetPanelProps {
   isActive: boolean;
