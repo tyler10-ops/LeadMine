@@ -58,12 +58,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <Link href="/" className="flex items-center justify-center gap-2.5 mb-10">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-black"
-            style={{ background: "linear-gradient(135deg, #00FF88 0%, #00CC66 100%)", boxShadow: "0 2px 16px rgba(0,255,136,0.35)" }}
-          >
-            LM
-          </div>
+          <img src="/logo.png" alt="LeadMine" className="w-8 h-8 object-contain" style={{ mixBlendMode: "screen" }} />
           <span className="text-[15px] font-bold tracking-tight text-neutral-100">Lead Mine</span>
         </Link>
 

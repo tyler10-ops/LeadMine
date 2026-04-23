@@ -277,15 +277,7 @@ export default function OnboardingPage() {
 
         {/* Brand */}
         <div className="text-center mb-10">
-          <div
-            className="inline-flex items-center justify-center w-10 h-10 rounded-xl mb-4"
-            style={{
-              background: "linear-gradient(135deg, #00FF88 0%, #00CC66 100%)",
-              boxShadow: "0 0 24px rgba(0,255,136,0.3)",
-            }}
-          >
-            <span className="text-black text-[10px] font-black tracking-widest">LM</span>
-          </div>
+          <img src="/logo.png" alt="LeadMine" className="w-12 h-12 object-contain mb-4" style={{ mixBlendMode: "screen" }} />
           <h1 className="text-[22px] font-bold text-neutral-100 tracking-tight">
             Set up your mine
           </h1>

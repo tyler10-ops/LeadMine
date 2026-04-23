@@ -105,17 +105,12 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
         <div className={cn("flex items-center h-[52px] border-b border-white/[0.04] flex-shrink-0", sidebarOpen ? "px-4 gap-2.5" : "justify-center px-0")}>
           <button
             onClick={handleLogoClick}
-            className="relative w-6 h-6 rounded-md flex items-center justify-center shadow-md focus:outline-none flex-shrink-0"
-            style={{
-              background: adminMode
-                ? "linear-gradient(135deg, #FFD60A 0%, #CC9900 100%)"
-                : "linear-gradient(135deg, #00FF88 0%, #00CC66 100%)",
-              boxShadow: adminMode ? "0 2px 8px rgba(255,214,10,0.4)" : "0 2px 8px rgba(0,255,136,0.25)",
-            }}
+            className="relative w-7 h-7 flex items-center justify-center focus:outline-none flex-shrink-0"
           >
-            <span className="text-black text-[9px] font-bold tracking-widest">
-              {adminMode ? "★" : "LM"}
-            </span>
+            {adminMode
+              ? <span className="text-[#FFD60A] text-[14px]">★</span>
+              : <img src="/logo.png" alt="LeadMine" className="w-7 h-7 object-contain" style={{ mixBlendMode: "screen" }} />
+            }
           </button>
           {sidebarOpen && (
             <div className="min-w-0">
