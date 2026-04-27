@@ -14,6 +14,8 @@ export interface BriefData {
   daysSinceLastMine: number | null;
   aiSummary: string;
   generatedAt: string;
+  newLeadsCount?: number;
+  topNewGems?: PropertyLead[];
 }
 
 export async function GET() {

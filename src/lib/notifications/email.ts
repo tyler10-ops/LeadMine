@@ -3,7 +3,7 @@ import type { BriefData } from "@/app/api/brief/route";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.NOTIFICATION_FROM_EMAIL ?? "briefs@leadmine.app";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.leadmine.app";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.leadmineapp.com";
 
 // ── Tier emoji / label map ────────────────────────────────────────────────────
 
@@ -24,7 +24,7 @@ const TIER_LABELS: Record<string, string> = {
 // ── Email HTML builder ────────────────────────────────────────────────────────
 
 function buildEmailHtml(brief: BriefData, date: string): string {
-  const { realtorName, aiSummary, tierCounts, priorityLeads, followUpLeads, dealGoal, daysSinceLastMine } = brief;
+  const { realtorName, aiSummary, tierCounts, priorityLeads, followUpLeads, dealGoal, daysSinceLastMine, newLeadsCount, topNewGems } = brief;
 
   const priorityRows = priorityLeads.slice(0, 5).map((lead) => {
     const name     = lead.owner_name || lead.business_name || "Unknown";
@@ -84,82 +84,98 @@ function buildEmailHtml(brief: BriefData, date: string): string {
       <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
         <!-- Header -->
-        <tr><td style="padding-bottom:24px;">
-          <p style="margin:0;font-size:11px;text-transform:uppercase;letter-spacing:0.2em;color:#525252;font-weight:700;">LEAD MINE</p>
-          <h1 style="margin:6px 0 0;font-size:22px;font-weight:700;color:#e5e5e5;">War Room Brief</h1>
-          <p style="margin:4px 0 0;font-size:13px;color:#525252;">${date}</p>
+        <tr><td style="padding-bottom:28px;border-bottom:1px solid #1a1a1a;">
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            <td>
+              <p style="margin:0 0 4px;font-size:11px;text-transform:uppercase;letter-spacing:0.25em;color:#00FF88;font-weight:700;">⛏ LEADMINE</p>
+              <h1 style="margin:0;font-size:24px;font-weight:800;color:#f5f5f5;letter-spacing:-0.5px;">Morning Brief</h1>
+              <p style="margin:4px 0 0;font-size:12px;color:#404040;">Good morning, ${realtorName} · ${date}</p>
+            </td>
+          </tr></table>
         </td></tr>
+        <tr><td style="height:24px;"></td></tr>
+
+        ${(newLeadsCount ?? 0) > 0 ? `
+        <!-- New Leads Overnight -->
+        <tr><td style="padding:20px;background:#020f07;border:1px solid #00FF8822;border-left:3px solid #00FF88;border-radius:12px;">
+          <p style="margin:0 0 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.15em;color:#00FF88;font-weight:700;">⛏ Mined Overnight · ${newLeadsCount} New Lead${(newLeadsCount??0) !== 1 ? "s" : ""}</p>
+          ${(topNewGems ?? []).map((gem) => {
+            const addr  = gem.property_address || gem.owner_name || "Unknown";
+            const city  = [gem.property_city, gem.property_state].filter(Boolean).join(", ") || "—";
+            const val   = gem.estimated_value   ? `$${Math.round(gem.estimated_value / 1000)}k`   : null;
+            const equity = gem.estimated_equity ? `$${Math.round(gem.estimated_equity / 1000)}k equity` : null;
+            const grade = gem.gem_grade === "elite" ? "◆ Elite Gem" : "◈ Refined";
+            const gradeColor = gem.gem_grade === "elite" ? "#00FF88" : "#FFD60A";
+            return `<div style="padding:10px 0;border-bottom:1px solid #0a1a0d;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;font-weight:600;color:#e5e5e5;">${addr}</span>
+                <span style="font-size:11px;font-weight:700;color:${gradeColor};">${grade}</span>
+              </div>
+              <div style="margin-top:3px;font-size:11px;color:#525252;">${city}${val ? ` · ${val}` : ""}${equity ? ` · ${equity}` : ""}</div>
+            </div>`;
+          }).join("")}
+          <div style="margin-top:14px;">
+            <a href="${APP_URL}/dashboard/hub" style="font-size:12px;color:#00FF88;text-decoration:none;font-weight:600;">View all new leads →</a>
+          </div>
+        </td></tr>
+        <tr><td style="height:20px;"></td></tr>` : ""}
 
         <!-- AI Summary -->
-        <tr><td style="padding:20px;background:#0a0a0a;border:1px solid #1a1a1a;border-left:3px solid #00FF88;border-radius:10px;margin-bottom:24px;">
-          <p style="margin:0;font-size:14px;color:#d4d4d4;line-height:1.6;">${aiSummary}</p>
+        <tr><td style="padding:18px 20px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;">
+          <p style="margin:0;font-size:13px;color:#c4c4c4;line-height:1.7;">${aiSummary}</p>
         </td></tr>
-
-        <!-- Spacer -->
         <tr><td style="height:24px;"></td></tr>
 
         <!-- Pipeline stats -->
         <tr><td>
-          <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#525252;font-weight:600;margin:0 0 12px 0;">Pipeline · Goal: ${dealGoal} deals/mo</p>
-          <table width="100%" cellpadding="0" cellspacing="0">
-            <tr>
-              ${[
-                { label: "💎 Diamond", count: tierCounts.diamond, color: TIER_COLORS.diamond },
-                { label: "🔥 Hot",     count: tierCounts.hot,     color: TIER_COLORS.hot },
-                { label: "⚡ Warm",    count: tierCounts.warm,    color: TIER_COLORS.warm },
-                { label: "❄️ Cold",    count: tierCounts.cold,    color: TIER_COLORS.cold },
-              ].map(({ label, count, color }) => `
-                <td style="width:25%;text-align:center;padding:14px 8px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;">
-                  <div style="font-size:24px;font-weight:900;color:${color};">${count}</div>
-                  <div style="font-size:10px;color:#525252;margin-top:4px;">${label}</div>
-                </td>`).join('<td style="width:8px;"></td>')}
-            </tr>
-          </table>
+          <p style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#404040;font-weight:600;margin:0 0 10px 0;">Pipeline · Goal: ${dealGoal} deals/mo</p>
+          <table width="100%" cellpadding="0" cellspacing="0"><tr>
+            ${[
+              { label: "Diamond", count: tierCounts.diamond, color: TIER_COLORS.diamond, icon: "◆" },
+              { label: "Hot",     count: tierCounts.hot,     color: TIER_COLORS.hot,     icon: "▲" },
+              { label: "Warm",    count: tierCounts.warm,    color: TIER_COLORS.warm,    icon: "◈" },
+              { label: "Cold",    count: tierCounts.cold,    color: TIER_COLORS.cold,    icon: "◇" },
+            ].map(({ label, count, color, icon }) => `
+              <td style="width:25%;text-align:center;padding:14px 6px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:8px;">
+                <div style="font-size:10px;color:${color};margin-bottom:6px;">${icon}</div>
+                <div style="font-size:22px;font-weight:900;color:${color};line-height:1;">${count}</div>
+                <div style="font-size:10px;color:#404040;margin-top:5px;">${label}</div>
+              </td>`).join('<td style="width:6px;"></td>')}
+          </tr></table>
         </td></tr>
-
-        <!-- Spacer -->
-        <tr><td style="height:28px;"></td></tr>
+        <tr><td style="height:24px;"></td></tr>
 
         <!-- Priority calls -->
         ${priorityLeads.length > 0 ? `
         <tr><td>
-          <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:#525252;font-weight:600;margin:0 0 12px 0;">📞 Priority Calls Today (${priorityLeads.length})</p>
+          <p style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:#404040;font-weight:600;margin:0 0 10px 0;">Priority Calls Today · ${priorityLeads.length}</p>
           <table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;overflow:hidden;">
-            <tr style="background:#111;">
-              <th style="padding:8px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#525252;font-weight:600;">Score</th>
-              <th style="padding:8px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#525252;font-weight:600;">Lead</th>
-              <th style="padding:8px 16px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#525252;font-weight:600;">Tier</th>
-              <th style="padding:8px 16px;text-align:right;font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#525252;font-weight:600;">Action</th>
-            </tr>
             ${priorityRows}
           </table>
         </td></tr>` : `
-        <tr><td style="padding:20px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;text-align:center;">
-          <p style="margin:0;font-size:13px;color:#525252;">All caught up — no priority contacts pending today.</p>
+        <tr><td style="padding:16px 20px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:10px;text-align:center;">
+          <p style="margin:0;font-size:13px;color:#404040;">All caught up — no priority contacts pending.</p>
         </td></tr>`}
 
         <!-- Follow-up + mine alert -->
         <tr><td>${followUpSection}${mineAlert}</td></tr>
-
-        <!-- Spacer -->
-        <tr><td style="height:32px;"></td></tr>
+        <tr><td style="height:28px;"></td></tr>
 
         <!-- CTA -->
         <tr><td style="text-align:center;">
           <a href="${APP_URL}/dashboard/hub"
-             style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#00FF88,#00CC66);color:#000;font-weight:700;font-size:14px;border-radius:10px;text-decoration:none;">
+             style="display:inline-block;padding:14px 36px;background:#00FF88;color:#000;font-weight:800;font-size:14px;border-radius:10px;text-decoration:none;letter-spacing:-0.2px;">
             Open War Room →
           </a>
         </td></tr>
-
-        <!-- Spacer -->
         <tr><td style="height:32px;"></td></tr>
 
         <!-- Footer -->
-        <tr><td style="border-top:1px solid #1a1a1a;padding-top:20px;text-align:center;">
-          <p style="margin:0;font-size:11px;color:#404040;">
-            LeadMine · You're receiving this because daily briefs are enabled.
-            <a href="${APP_URL}/dashboard/hub" style="color:#525252;text-decoration:underline;">Manage preferences</a>
+        <tr><td style="border-top:1px solid #111;padding-top:20px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:11px;font-weight:700;color:#00FF88;letter-spacing:0.15em;">⛏ LEADMINE</p>
+          <p style="margin:0;font-size:11px;color:#333;">
+            You're receiving this because daily briefs are enabled ·
+            <a href="${APP_URL}/dashboard/hub" style="color:#444;text-decoration:underline;">Manage</a>
           </p>
         </td></tr>
 
@@ -182,9 +198,10 @@ export async function sendDailyBriefEmail(
   });
 
   const highValue = brief.tierCounts.diamond + brief.tierCounts.hot;
+  const newNote = (brief.newLeadsCount ?? 0) > 0 ? `⛏ ${brief.newLeadsCount} new leads · ` : "";
   const subjectLine = brief.tierCounts.total === 0
     ? `LeadMine: Your pipeline is empty — time to mine`
-    : `LeadMine: ${brief.priorityLeads.length} priority call${brief.priorityLeads.length !== 1 ? "s" : ""} today · ${highValue} high-value leads`;
+    : `${newNote}LeadMine: ${brief.priorityLeads.length} priority call${brief.priorityLeads.length !== 1 ? "s" : ""} today · ${highValue} high-value`;
 
   try {
     const { error } = await resend.emails.send({

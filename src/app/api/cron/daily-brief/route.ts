@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   // Fetch all realtors with notifications enabled
   const { data: prefs, error: prefsError } = await supabase
     .from("notification_preferences")
-    .select("realtor_id, email_enabled, push_enabled");
+    .select("realtor_id, email_enabled, push_enabled, last_sent_at");
 
   if (prefsError) {
     console.error("[cron/daily-brief] Failed to fetch prefs:", prefsError.message);
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (!pref.email_enabled && !pref.push_enabled) continue;
 
     try {
-      const brief = await buildBriefForRealtor(supabase, pref.realtor_id);
+      const brief = await buildBriefForRealtor(supabase, pref.realtor_id, pref.last_sent_at ?? undefined);
       if (!brief) continue;
 
       // Send email
@@ -95,7 +95,8 @@ export async function GET(request: NextRequest) {
 
 async function buildBriefForRealtor(
   supabase: ReturnType<typeof createServiceClient>,
-  realtorId: string
+  realtorId: string,
+  lastSentAt?: string
 ): Promise<BriefData | null> {
   const { data: realtor } = await supabase
     .from("realtors")
@@ -172,11 +173,32 @@ async function buildBriefForRealtor(
     ? Math.floor((now - new Date(lastJob.completed_at).getTime()) / (1000 * 60 * 60 * 24))
     : null;
 
-  // Simple fallback summary for cron (avoids extra AI cost per send)
+  // New leads since last brief
+  let newLeadsCount = 0;
+  let topNewGems: PropertyLead[] = [];
+  if (lastSentAt && areaIds.length > 0) {
+    const { data: newLeads } = await supabase
+      .from("leads")
+      .select("*")
+      .in("search_area_id", areaIds)
+      .gt("created_at", lastSentAt)
+      .order("opportunity_score", { ascending: false })
+      .limit(50);
+
+    const fresh = (newLeads ?? []) as PropertyLead[];
+    newLeadsCount = fresh.length;
+    topNewGems = fresh.filter((l) => l.gem_grade === "elite").slice(0, 3);
+    if (topNewGems.length < 3) {
+      const refined = fresh.filter((l) => l.gem_grade === "refined").slice(0, 3 - topNewGems.length);
+      topNewGems = [...topNewGems, ...refined];
+    }
+  }
+
   const highValue = tierCounts.diamond + tierCounts.hot;
+  const newLeadsNote = newLeadsCount > 0 ? `${newLeadsCount} new lead${newLeadsCount !== 1 ? "s" : ""} were found overnight. ` : "";
   const aiSummary = priorityLeads.length > 0
-    ? `You have ${priorityLeads.length} lead${priorityLeads.length !== 1 ? "s" : ""} waiting for first contact and ${highValue} high-value opportunities in your pipeline. ${daysSinceLastMine && daysSinceLastMine > 7 ? `Your last mining run was ${daysSinceLastMine} days ago — time for a fresh batch.` : "Open your War Room to take action."}`
-    : `Your pipeline has ${tierCounts.total} leads${highValue > 0 ? ` — ${highValue} are high-value` : ""}. All priority contacts are up to date. ${daysSinceLastMine && daysSinceLastMine > 7 ? "Consider running a new mining job to find fresh leads." : "Keep up the momentum."}`;
+    ? `${newLeadsNote}You have ${priorityLeads.length} lead${priorityLeads.length !== 1 ? "s" : ""} waiting for first contact and ${highValue} high-value opportunities in your pipeline. ${daysSinceLastMine && daysSinceLastMine > 7 ? `Your last mining run was ${daysSinceLastMine} days ago — time for a fresh batch.` : "Open your War Room to take action."}`
+    : `${newLeadsNote}Your pipeline has ${tierCounts.total} leads${highValue > 0 ? ` — ${highValue} are high-value` : ""}. All priority contacts are up to date. ${daysSinceLastMine && daysSinceLastMine > 7 ? "Consider running a new mining job to find fresh leads." : "Keep up the momentum."}`;
 
   return {
     realtorName: realtor.name ?? "there",
@@ -187,5 +209,7 @@ async function buildBriefForRealtor(
     daysSinceLastMine,
     aiSummary,
     generatedAt: new Date().toISOString(),
+    newLeadsCount,
+    topNewGems,
   };
 }
