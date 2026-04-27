@@ -24,7 +24,8 @@ const TIER_LABELS: Record<string, string> = {
 // ── Email HTML builder ────────────────────────────────────────────────────────
 
 function buildEmailHtml(brief: BriefData, date: string): string {
-  const { realtorName, aiSummary, tierCounts, priorityLeads, followUpLeads, dealGoal, daysSinceLastMine, newLeadsCount, topNewGems } = brief;
+  const { realtorName, aiSummary, tierCounts, priorityLeads, followUpLeads, dealGoal, daysSinceLastMine, newLeadsCount, topNewGems, plan } = brief;
+  const isPaid = plan && plan !== "free";
 
   const priorityRows = priorityLeads.slice(0, 5).map((lead) => {
     const name     = lead.owner_name || lead.business_name || "Unknown";
@@ -77,7 +78,7 @@ function buildEmailHtml(brief: BriefData, date: string): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Your LeadMine War Room Brief</title></head>
+<title>Your LeadMine Morning Brief</title></head>
 <body style="margin:0;padding:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#000;padding:32px 16px;">
     <tr><td align="center">
@@ -163,10 +164,16 @@ function buildEmailHtml(brief: BriefData, date: string): string {
 
         <!-- CTA -->
         <tr><td style="text-align:center;">
+          ${isPaid ? `
           <a href="${APP_URL}/dashboard/hub"
              style="display:inline-block;padding:14px 36px;background:#00FF88;color:#000;font-weight:800;font-size:14px;border-radius:10px;text-decoration:none;letter-spacing:-0.2px;">
-            Open War Room →
+            Open Dashboard →
+          </a>` : `
+          <a href="${APP_URL}/auth/signup"
+             style="display:inline-block;padding:14px 36px;background:#00FF88;color:#000;font-weight:800;font-size:14px;border-radius:10px;text-decoration:none;letter-spacing:-0.2px;">
+            Upgrade to Contact These Leads →
           </a>
+          <p style="margin:10px 0 0;font-size:11px;color:#404040;">Free plan · Lead details are visible after upgrading</p>`}
         </td></tr>
         <tr><td style="height:32px;"></td></tr>
 

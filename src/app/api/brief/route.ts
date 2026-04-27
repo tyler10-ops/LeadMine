@@ -16,6 +16,7 @@ export interface BriefData {
   generatedAt: string;
   newLeadsCount?: number;
   topNewGems?: PropertyLead[];
+  plan?: string;
 }
 
 export async function GET() {

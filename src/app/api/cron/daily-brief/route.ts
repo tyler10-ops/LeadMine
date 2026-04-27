@@ -100,7 +100,7 @@ async function buildBriefForRealtor(
 ): Promise<BriefData | null> {
   const { data: realtor } = await supabase
     .from("realtors")
-    .select("id, name, city, state")
+    .select("id, name, city, state, plan")
     .eq("id", realtorId)
     .single();
 
@@ -211,5 +211,6 @@ async function buildBriefForRealtor(
     generatedAt: new Date().toISOString(),
     newLeadsCount,
     topNewGems,
+    plan: realtor.plan ?? "free",
   };
 }
