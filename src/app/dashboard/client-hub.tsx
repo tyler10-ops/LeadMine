@@ -11,6 +11,7 @@ import { CavePanel } from "@/components/hub/panels/cave-panel";
 import { AutomationsPanel } from "@/components/hub/panels/automations-panel";
 import { canAccess } from "@/lib/plan-limits";
 import type { Plan } from "@/lib/plan-limits";
+import { TutorialOverlay } from "@/components/hub/tutorial-overlay";
 import {
   LayoutGrid,
   Zap,
@@ -27,6 +28,7 @@ import {
   LogOut,
   Radio,
   Activity,
+  HelpCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -55,10 +57,12 @@ interface ClientHubProps {
 }
 
 export function ClientHub({ clientId, businessName, industry, plan = "free" }: ClientHubProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [adminMode, setAdminMode]     = useState(false);
-  const [isMining, setIsMining]       = useState(false);
+  const [activeIndex, setActiveIndex]   = useState(0);
+  const [sidebarOpen, setSidebarOpen]   = useState(true);
+  const [adminMode, setAdminMode]       = useState(false);
+  const [isMining, setIsMining]         = useState(false);
+  const [tutorialKey, setTutorialKey]   = useState(0);
+  const [forceTutorial, setForceTutorial] = useState(false);
   const logoClickCount                = useRef(0);
   const logoClickTimer                = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router                        = useRouter();
@@ -241,6 +245,15 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Tutorial replay */}
+            <button
+              onClick={() => { setForceTutorial(true); setTutorialKey((k) => k + 1); }}
+              title="Replay tutorial"
+              className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-300 hover:bg-white/[0.04] transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+
             {/* Prev/Next panel */}
             <div className="flex items-center gap-0.5">
               <button
@@ -354,6 +367,13 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
           </div>
         </div>
       </div>
+
+      <TutorialOverlay
+        key={tutorialKey}
+        onTabChange={setActiveIndex}
+        forceOpen={forceTutorial}
+        onClose={() => setForceTutorial(false)}
+      />
     </div>
   );
 }

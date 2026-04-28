@@ -4,13 +4,11 @@ import { getPropertyMiningQueue } from "@/lib/queue/queues";
 
 /**
  * POST /api/mining/property-start
- * Queue a property owner mining job for a set of counties.
+ * Queue a property owner mining job for a set of ZIP codes.
  *
  * Body: {
- *   counties: string[]      // e.g. ["Travis"]
- *   state: string           // e.g. "TX"
+ *   zipCodes: string[]       // e.g. ["78701", "78702"]
  *   propertyTypes?: string[] // defaults to ["single_family"]
- *   zipCodes?: string[]
  *   minYearsOwned?: number
  *   minEquityPct?: number
  * }
@@ -28,32 +26,30 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      counties,
-      state,
-      propertyTypes = ["single_family"],
       zipCodes      = [],
+      propertyTypes = ["single_family"],
       minYearsOwned = 0,
       minEquityPct  = 0,
     } = body;
 
-    if (!counties?.length || !state) {
+    if (!zipCodes?.length) {
       return NextResponse.json(
-        { error: "counties (array) and state are required" },
+        { error: "zipCodes (array) is required" },
         { status: 400 }
       );
     }
 
     const queue = getPropertyMiningQueue();
     const job   = await queue.add(
-      `property:${state}:${counties.join("-")}`,
-      { clientId, counties, state, propertyTypes, zipCodes, minYearsOwned, minEquityPct },
-      { jobId: `prop-${clientId}-${state}-${counties.join("-")}-${Date.now()}` }
+      `property:zips:${zipCodes.join("-")}`,
+      { clientId, counties: [], state: "", propertyTypes, zipCodes, minYearsOwned, minEquityPct },
+      { jobId: `prop-${clientId}-${zipCodes.join("-")}-${Date.now()}` }
     );
 
     return NextResponse.json({
       jobId:   job.id,
       status:  "queued",
-      message: `Property mining queued for ${counties.join(", ")}, ${state}`,
+      message: `Property mining queued for ZIP codes: ${zipCodes.join(", ")}`,
     });
   } catch (err) {
     console.error("[api/mining/property-start]", err);

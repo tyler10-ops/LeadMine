@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowRight, ArrowLeft, X } from "lucide-react";
-import { GEM, GLOW, CAVE } from "@/lib/cave-theme";
+import { GEM } from "@/lib/cave-theme";
 
 const STORAGE_KEY = "gemmine_tutorial_complete_v2";
 
@@ -32,8 +32,8 @@ const STEPS: TutorialStep[] = [
   {
     gem: "green",
     tag: "Lead Machine",
-    title: "Mine any US county.",
-    body: "Search any county in the left panel, select up to 3, then hit Mine. The AI fetches public assessor records, scores each property, and delivers graded leads.",
+    title: "Mine leads by ZIP code.",
+    body: "Enter ZIP codes in the left panel, set your filters, then hit Mine. The AI fetches public assessor records, scores each property, and delivers graded leads.",
     switchTab: 1,
   },
   {
@@ -61,7 +61,7 @@ const STEPS: TutorialStep[] = [
     gem: "green",
     tag: "You're Ready!",
     title: "Start mining. Let's get to work.",
-    body: "Search a county → hit Mine → watch graded leads flow in. Tap the ? button in the header any time to replay this tour. Happy mining!",
+    body: "Enter ZIP codes → hit Mine → watch graded leads flow in. Tap the ? button in the header any time to replay this tour. Happy mining!",
     switchTab: 1,
   },
 ];

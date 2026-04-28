@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMiningQueue } from "@/lib/queue/queues";
+import { getPropertyMiningQueue } from "@/lib/queue/queues";
 
 /**
  * GET /api/mining/status?jobId=xxx
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const queue = getMiningQueue();
+    const queue = getPropertyMiningQueue();
     const job = await queue.getJob(jobId);
 
     if (!job) {
