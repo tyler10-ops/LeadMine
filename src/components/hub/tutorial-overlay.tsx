@@ -6,6 +6,56 @@ import { GEM } from "@/lib/cave-theme";
 
 const STORAGE_KEY = "gemmine_tutorial_complete_v2";
 
+// ── Position config ───────────────────────────────────────────────────────────
+
+type PosKey = "bottom-right" | "bottom-left" | "top-right" | "center-left" | "center";
+
+interface PosConfig {
+  // All positions use left+top so CSS transition works smoothly
+  left: string;
+  top: string;
+  itemsAlign: "flex-start" | "flex-end";
+  tailSide: "right" | "left";
+}
+
+const POSITIONS: Record<PosKey, PosConfig> = {
+  // Bottom-right corner — default / gem grades / take action / ready
+  "bottom-right": {
+    left:       "calc(100vw - 400px)",
+    top:        "calc(100vh - 390px)",
+    itemsAlign: "flex-end",
+    tailSide:   "right",
+  },
+  // Bottom-left — near Lead Machine mining controls (past sidebar)
+  "bottom-left": {
+    left:       "216px",
+    top:        "calc(100vh - 390px)",
+    itemsAlign: "flex-start",
+    tailSide:   "left",
+  },
+  // Top-right — AI Assets header area
+  "top-right": {
+    left:       "calc(100vw - 400px)",
+    top:        "72px",
+    itemsAlign: "flex-end",
+    tailSide:   "right",
+  },
+  // Center-left — beside the sidebar for navigation step
+  "center-left": {
+    left:       "216px",
+    top:        "calc(50vh - 220px)",
+    itemsAlign: "flex-start",
+    tailSide:   "left",
+  },
+  // Center — welcome step
+  "center": {
+    left:       "calc(50vw - 170px)",
+    top:        "calc(50vh - 220px)",
+    itemsAlign: "flex-end",
+    tailSide:   "right",
+  },
+};
+
 // ── Tutorial step definitions ─────────────────────────────────────────────────
 
 interface TutorialStep {
@@ -14,55 +64,63 @@ interface TutorialStep {
   title: string;
   body: string;
   switchTab?: number;
+  pos: PosKey;
 }
 
 const STEPS: TutorialStep[] = [
   {
-    gem: "green",
-    tag: "Welcome",
+    gem:  "green",
+    tag:  "Welcome",
     title: "Hey! I'm Gem — your LeadMine guide.",
-    body: "I'll walk you through the platform in under 60 seconds. You'll learn how to mine property leads, grade opportunities, and close more deals — all on autopilot.",
+    body:  "I'll walk you through the platform in under 60 seconds. You'll learn how to mine property leads, grade opportunities, and close more deals — all on autopilot.",
+    pos:  "center",
   },
   {
-    gem: "yellow",
-    tag: "Navigation",
+    gem:  "yellow",
+    tag:  "Navigation",
     title: "Three panels. One operation.",
-    body: "Use the tabs at the top to navigate:\n\n· Command Center — KPI overview & signals\n· Lead Machine — active pipeline & mining\n· AI Assets — your autonomous agent fleet",
+    body:  "Use the sidebar on the left to navigate:\n\n· Command Center — KPI overview & signals\n· Lead Machine — active pipeline & mining\n· AI Assets — your autonomous agent fleet",
+    pos:  "center-left",
   },
   {
-    gem: "green",
-    tag: "Lead Machine",
+    gem:  "green",
+    tag:  "Lead Machine",
     title: "Mine leads by ZIP code.",
-    body: "Enter ZIP codes in the left panel, set your filters, then hit Mine. The AI fetches public assessor records, scores each property, and delivers graded leads.",
+    body:  "Enter ZIP codes right here, set your filters, then hit Mine. The AI fetches public assessor records, scores each property, and delivers graded leads.",
     switchTab: 1,
+    pos:  "bottom-left",
   },
   {
-    gem: "yellow",
-    tag: "Gem Grades",
+    gem:  "yellow",
+    tag:  "Gem Grades",
     title: "Every lead gets a score: 0–100.",
-    body: "Leads are graded automatically:\n\n· Elite Gem (65+) — call immediately\n· Refined (35–64) — nurture sequence\n· Rock (<35) — archived, not wasted",
+    body:  "Leads are graded automatically:\n\n· Elite Gem (65+) — call immediately\n· Refined (35–64) — nurture sequence\n· Rock (<35) — archived, not wasted",
     switchTab: 1,
+    pos:  "bottom-right",
   },
   {
-    gem: "green",
-    tag: "Take Action",
+    gem:  "green",
+    tag:  "Take Action",
     title: "Call, text, or email in one click.",
-    body: "Each lead card has action buttons. 📞 opens a live calling overlay with a timer. 💬 opens SMS with pre-written templates. ✉️ opens email — ready to send.",
+    body:  "Each lead card has action buttons. 📞 opens a live calling overlay. 💬 opens SMS with pre-written templates. ✉️ opens email — ready to send.",
     switchTab: 1,
+    pos:  "bottom-right",
   },
   {
-    gem: "yellow",
-    tag: "AI Assets",
+    gem:  "yellow",
+    tag:  "AI Assets",
     title: "Your 24/7 autonomous team.",
-    body: "Deploy voice agents, SMS bots, and booking agents that work while you sleep. Monitor activity, pause agents, and review logs — all from AI Assets.",
+    body:  "Deploy voice agents, SMS bots, and booking agents that work while you sleep. Monitor activity, pause agents, and review logs — all from AI Assets.",
     switchTab: 2,
+    pos:  "top-right",
   },
   {
-    gem: "green",
-    tag: "You're Ready!",
+    gem:  "green",
+    tag:  "You're Ready!",
     title: "Start mining. Let's get to work.",
-    body: "Enter ZIP codes → hit Mine → watch graded leads flow in. Tap the ? button in the header any time to replay this tour. Happy mining!",
+    body:  "Enter ZIP codes → hit Mine → watch graded leads flow in. Tap the ? button in the header any time to replay this tour. Happy mining!",
     switchTab: 1,
+    pos:  "bottom-right",
   },
 ];
 
@@ -84,202 +142,109 @@ function RobotMascot({
   const eyeH = blinking ? 1 : 11;
 
   return (
-    <svg
-      viewBox="0 0 110 116"
-      width="110"
-      height="116"
-      style={{ overflow: "visible" }}
-    >
-      {/* ── Antenna ─────────────────────────────────────────────────── */}
+    <svg viewBox="0 0 110 116" width="110" height="116" style={{ overflow: "visible" }}>
+      {/* Antenna */}
       <line x1="38" y1="10" x2="38" y2="2" stroke={gemColor} strokeWidth="2" strokeLinecap="round" />
       <circle cx="38" cy="1" r="3" fill={gemColor} style={{ filter: `drop-shadow(0 0 5px ${gemColor})` }} />
       <circle cx="38" cy="1" r="6" fill={gemColor} fillOpacity="0.2"
         style={{ animation: "ping 2s cubic-bezier(0,0,0.2,1) infinite" }}
       />
-
-      {/* ── Head ────────────────────────────────────────────────────── */}
+      {/* Head */}
       <rect x="5" y="10" width="66" height="42" rx="10"
-        fill="#0b0b18"
-        stroke={gemColor}
-        strokeWidth="1.5"
-        strokeOpacity="0.65"
+        fill="#0b0b18" stroke={gemColor} strokeWidth="1.5" strokeOpacity="0.65"
         style={{ filter: `drop-shadow(0 0 8px ${gemColor}20)` }}
       />
-      {/* Head highlight */}
-      <rect x="6" y="11" width="64" height="6" rx="9"
-        fill="rgba(255,255,255,0.04)"
-      />
-
-      {/* ── Eyes ────────────────────────────────────────────────────── */}
-      {/* Left eye socket */}
+      <rect x="6" y="11" width="64" height="6" rx="9" fill="rgba(255,255,255,0.04)" />
+      {/* Eyes */}
       <rect x="12" y="20" width="18" height="14" rx="3" fill="#06060f" />
-      {/* Left eye LED */}
-      <rect
-        x="13" y={blinking ? 26 : "21"} width="16" height={eyeH} rx="2"
+      <rect x="13" y={blinking ? 26 : "21"} width="16" height={eyeH} rx="2"
         fill={gemColor}
-        style={{
-          filter: `drop-shadow(0 0 5px ${gemColor})`,
-          transition: "height 0.07s ease, y 0.07s ease",
-        }}
+        style={{ filter: `drop-shadow(0 0 5px ${gemColor})`, transition: "height 0.07s ease, y 0.07s ease" }}
       />
-      {/* Right eye socket */}
       <rect x="46" y="20" width="18" height="14" rx="3" fill="#06060f" />
-      {/* Right eye LED */}
-      <rect
-        x="47" y={blinking ? 26 : "21"} width="16" height={eyeH} rx="2"
+      <rect x="47" y={blinking ? 26 : "21"} width="16" height={eyeH} rx="2"
         fill={gemColor}
-        style={{
-          filter: `drop-shadow(0 0 5px ${gemColor})`,
-          transition: "height 0.07s ease, y 0.07s ease",
-        }}
+        style={{ filter: `drop-shadow(0 0 5px ${gemColor})`, transition: "height 0.07s ease, y 0.07s ease" }}
       />
-
-      {/* ── Smile ───────────────────────────────────────────────────── */}
+      {/* Smile */}
       <path
-        d={step === STEPS.length - 1
-          ? "M 14 40 Q 38 50 62 40"   // big smile at the end
-          : "M 17 40 Q 38 47 59 40"}   // regular smile
-        stroke={gemColor}
-        strokeWidth="1.5"
-        fill="none"
-        strokeLinecap="round"
-        strokeOpacity="0.7"
+        d={step === STEPS.length - 1 ? "M 14 40 Q 38 50 62 40" : "M 17 40 Q 38 47 59 40"}
+        stroke={gemColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeOpacity="0.7"
         style={{ transition: "d 0.3s ease" }}
       />
-
-      {/* ── Body ────────────────────────────────────────────────────── */}
+      {/* Body */}
       <rect x="8" y="56" width="60" height="36" rx="9"
-        fill="#0b0b18"
-        stroke={gemColor}
-        strokeWidth="1"
-        strokeOpacity="0.4"
+        fill="#0b0b18" stroke={gemColor} strokeWidth="1" strokeOpacity="0.4"
       />
-
-      {/* Chest panel */}
       <rect x="15" y="62" width="46" height="22" rx="4"
-        fill={gemColor}
-        fillOpacity="0.055"
-        stroke={gemColor}
-        strokeWidth="0.75"
-        strokeOpacity="0.2"
+        fill={gemColor} fillOpacity="0.055" stroke={gemColor} strokeWidth="0.75" strokeOpacity="0.2"
       />
       {/* Progress bar */}
       <rect x="18" y="66" width="40" height="4" rx="2" fill="rgba(255,255,255,0.06)" />
       <rect x="18" y="66" width={40 * (step / totalSteps)} height="4" rx="2"
-        fill={gemColor}
-        style={{ transition: "width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+        fill={gemColor} style={{ transition: "width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}
       />
-      {/* Step readout */}
       <text x="38" y="79" fontSize="5.5" fill={gemColor} fillOpacity="0.55"
         textAnchor="middle" fontFamily="'SF Mono', 'Fira Mono', monospace" letterSpacing="0.5"
       >
         {step}/{totalSteps}
       </text>
-
-      {/* ── Left arm ────────────────────────────────────────────────── */}
+      {/* Left arm */}
       <rect
         x="0" y={waving ? "52" : "58"} width="7" height="26" rx="3.5"
-        fill="#0b0b18"
-        stroke={gemColor}
-        strokeWidth="1"
-        strokeOpacity="0.3"
+        fill="#0b0b18" stroke={gemColor} strokeWidth="1" strokeOpacity="0.3"
         style={{
           transformOrigin: "3.5px 58px",
           transform: waving ? "rotate(-40deg)" : "rotate(0deg)",
           transition: "transform 0.3s ease, y 0.3s ease",
         }}
       />
-
-      {/* ── Right arm (holding clipboard) ───────────────────────────── */}
+      {/* Right arm */}
       <rect x="69" y="56" width="7" height="28" rx="3.5"
-        fill="#0b0b18"
-        stroke={gemColor}
-        strokeWidth="1"
-        strokeOpacity="0.3"
+        fill="#0b0b18" stroke={gemColor} strokeWidth="1" strokeOpacity="0.3"
       />
-
-      {/* ── Clipboard ───────────────────────────────────────────────── */}
-      {/* Board */}
+      {/* Clipboard */}
       <rect x="74" y="44" width="34" height="44" rx="4"
-        fill="#0d0d1e"
-        stroke={gemColor}
-        strokeWidth="1.2"
-        strokeOpacity="0.55"
+        fill="#0d0d1e" stroke={gemColor} strokeWidth="1.2" strokeOpacity="0.55"
       />
-      {/* Paper highlight */}
-      <rect x="75" y="45" width="32" height="6" rx="3"
-        fill="rgba(255,255,255,0.03)"
-      />
-      {/* Clip */}
-      <rect x="84" y="40" width="14" height="7" rx="3"
-        fill={gemColor}
-        fillOpacity="0.55"
-      />
-      <rect x="87" y="38" width="8" height="5" rx="2"
-        fill={gemColor}
-        fillOpacity="0.75"
-      />
-
-      {/* Checklist items */}
+      <rect x="75" y="45" width="32" height="6" rx="3" fill="rgba(255,255,255,0.03)" />
+      <rect x="84" y="40" width="14" height="7" rx="3" fill={gemColor} fillOpacity="0.55" />
+      <rect x="87" y="38" width="8" height="5" rx="2" fill={gemColor} fillOpacity="0.75" />
       {Array.from({ length: totalSteps }).map((_, i) => (
         <g key={i}>
-          {/* Checkbox */}
           <rect
             x="77" y={52 + i * 5} width="4.5" height="4.5" rx="1"
             fill={i < step ? gemColor : "transparent"}
             fillOpacity={i < step ? 0.85 : 0}
-            stroke={gemColor}
-            strokeWidth="0.75"
+            stroke={gemColor} strokeWidth="0.75"
             strokeOpacity={i < step ? 0.9 : 0.3}
           />
-          {/* Checkmark tick */}
           {i < step && (
             <path
               d={`M ${78} ${54.2 + i * 5} l 1.1 1.4 l 2.3 -2.6`}
-              stroke="#000"
-              strokeWidth="0.9"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              stroke="#000" strokeWidth="0.9" fill="none"
+              strokeLinecap="round" strokeLinejoin="round"
             />
           )}
-          {/* Line */}
           <rect
             x="84" y={54 + i * 5} width={i < step ? 18 : 15} height="1.5" rx="0.75"
-            fill={gemColor}
-            fillOpacity={i < step ? 0.55 : 0.18}
+            fill={gemColor} fillOpacity={i < step ? 0.55 : 0.18}
             style={{ transition: "width 0.4s ease, fill-opacity 0.4s ease" }}
           />
         </g>
       ))}
-
-      {/* ── Legs ────────────────────────────────────────────────────── */}
+      {/* Legs */}
       <rect x="13" y="94" width="15" height="20" rx="6"
-        fill="#0b0b18"
-        stroke={gemColor}
-        strokeWidth="1"
-        strokeOpacity="0.3"
+        fill="#0b0b18" stroke={gemColor} strokeWidth="1" strokeOpacity="0.3"
       />
       <rect x="48" y="94" width="15" height="20" rx="6"
-        fill="#0b0b18"
-        stroke={gemColor}
-        strokeWidth="1"
-        strokeOpacity="0.3"
+        fill="#0b0b18" stroke={gemColor} strokeWidth="1" strokeOpacity="0.3"
       />
-      {/* Feet */}
       <rect x="11" y="107" width="19" height="8" rx="4"
-        fill={gemColor}
-        fillOpacity="0.1"
-        stroke={gemColor}
-        strokeWidth="0.75"
-        strokeOpacity="0.3"
+        fill={gemColor} fillOpacity="0.1" stroke={gemColor} strokeWidth="0.75" strokeOpacity="0.3"
       />
       <rect x="46" y="107" width="19" height="8" rx="4"
-        fill={gemColor}
-        fillOpacity="0.1"
-        stroke={gemColor}
-        strokeWidth="0.75"
-        strokeOpacity="0.3"
+        fill={gemColor} fillOpacity="0.1" stroke={gemColor} strokeWidth="0.75" strokeOpacity="0.3"
       />
     </svg>
   );
@@ -302,6 +267,13 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
   const [blinking, setBlinking] = useState(false);
   const [waving, setWaving]     = useState(false);
   const [leaving, setLeaving]   = useState(false);
+  const [posStyle, setPosStyle] = useState<React.CSSProperties>({
+    left: POSITIONS["center"].left,
+    top:  POSITIONS["center"].top,
+  });
+  const [itemsAlign, setItemsAlign] = useState<"flex-start" | "flex-end">("flex-end");
+  const [tailSide, setTailSide]     = useState<"right" | "left">("right");
+  const [animating, setAnimating]   = useState(false);
 
   // Show on first visit or forceOpen
   useEffect(() => {
@@ -310,12 +282,25 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
     if (!done || forceOpen) {
       const t = setTimeout(() => {
         setVisible(true);
-        // Wave on welcome
         setTimeout(() => { setWaving(true); setTimeout(() => setWaving(false), 800); }, 400);
       }, 700);
       return () => clearTimeout(t);
     }
   }, [forceOpen]);
+
+  // Move robot to step position with a brief fade-out/in
+  useEffect(() => {
+    if (!visible) return;
+    const cfg = POSITIONS[STEPS[step]?.pos ?? "bottom-right"];
+    setAnimating(true);
+    const t = setTimeout(() => {
+      setPosStyle({ left: cfg.left, top: cfg.top });
+      setItemsAlign(cfg.itemsAlign);
+      setTailSide(cfg.tailSide);
+      setAnimating(false);
+    }, step === 0 ? 0 : 180); // slight delay on step 0 so entry animation runs first
+    return () => clearTimeout(t);
+  }, [step, visible]);
 
   // Blink randomly
   useEffect(() => {
@@ -324,10 +309,7 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
       const delay = 3000 + Math.random() * 4000;
       return setTimeout(() => {
         setBlinking(true);
-        setTimeout(() => {
-          setBlinking(false);
-          schedule();
-        }, 140);
+        setTimeout(() => { setBlinking(false); schedule(); }, 140);
       }, delay);
     };
     const t = schedule();
@@ -353,7 +335,6 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
   const next = () => {
     if (step < STEPS.length - 1) {
       setStep((s) => s + 1);
-      // Wave on last step
       if (step === STEPS.length - 2) {
         setTimeout(() => { setWaving(true); setTimeout(() => setWaving(false), 1200); }, 200);
       }
@@ -373,32 +354,38 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
 
   return (
     <>
-      {/* ── Backdrop ── */}
+      {/* Backdrop */}
       <div
         className="fixed inset-0 z-[90]"
         style={{
-          background: "rgba(0,0,0,0.72)",
-          backdropFilter: "blur(2px)",
+          background: "rgba(0,0,0,0.65)",
+          backdropFilter: "blur(1.5px)",
           animation: leaving ? "fade-out 300ms ease forwards" : "fade-in 300ms ease forwards",
         }}
         onClick={dismiss}
         aria-hidden="true"
       />
 
-      {/* ── Robot + Speech Bubble (fixed bottom-right) ── */}
+      {/* Robot + Speech Bubble */}
       <div
-        className="fixed z-[100] flex flex-col items-end"
+        className="fixed z-[100] flex flex-col"
         style={{
-          bottom: "28px",
-          right: "28px",
+          ...posStyle,
           gap: "10px",
-          animation: leaving
+          alignItems: itemsAlign,
+          opacity: animating ? 0 : 1,
+          transition: leaving
+            ? "none"
+            : "left 450ms cubic-bezier(0.22,1,0.36,1), top 450ms cubic-bezier(0.22,1,0.36,1), opacity 180ms ease",
+          animation: (step === 0 && !leaving)
+            ? "robot-enter 400ms cubic-bezier(0.22,1,0.36,1) forwards"
+            : leaving
             ? "robot-exit 300ms cubic-bezier(0.4,0,1,1) forwards"
-            : "robot-enter 400ms cubic-bezier(0.22,1,0.36,1) forwards",
+            : undefined,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Speech Bubble ── */}
+        {/* Speech Bubble */}
         <div
           className="relative"
           style={{
@@ -409,7 +396,6 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
           }}
           key={step}
         >
-          {/* Card */}
           <div
             className="rounded-2xl overflow-hidden"
             style={{
@@ -512,12 +498,12 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
             </div>
           </div>
 
-          {/* Speech bubble tail — points down toward robot head */}
+          {/* Speech bubble tail — points down toward robot */}
           <div
             className="absolute"
             style={{
               bottom: "-9px",
-              right: "72px",
+              [tailSide]: "72px",
               width: 0,
               height: 0,
               borderLeft:  "9px solid transparent",
@@ -529,7 +515,7 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
             className="absolute"
             style={{
               bottom: "-7px",
-              right: "73px",
+              [tailSide]: "73px",
               width: 0,
               height: 0,
               borderLeft:  "8px solid transparent",
@@ -539,15 +525,15 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
           />
         </div>
 
-        {/* ── Robot (floats below bubble) ── */}
+        {/* Robot */}
         <div
           style={{
             animation: "robot-float 3.2s ease-in-out infinite",
-            alignSelf: "flex-end",
-            marginRight: "8px",
+            alignSelf: tailSide === "right" ? "flex-end" : "flex-start",
+            marginRight: tailSide === "right" ? "8px" : undefined,
+            marginLeft:  tailSide === "left"  ? "8px" : undefined,
           }}
         >
-          {/* Ambient glow */}
           <div
             style={{
               position: "absolute",
@@ -572,7 +558,7 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
         </div>
       </div>
 
-      {/* ── Keyframes ── */}
+      {/* Keyframes */}
       <style>{`
         @keyframes robot-float {
           0%, 100% { transform: translateY(0px); }
