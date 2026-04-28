@@ -37,181 +37,8 @@ import { MiningPanel, GlowBorder } from "@/components/ui/mining-panel";
 import { GemShard } from "@/components/ui/embedded-gem";
 import { Gem } from "@/components/ui/gem";
 import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
-import { canAccess } from "@/lib/plan-limits";
+import { canAccess, getLimits } from "@/lib/plan-limits";
 import type { Plan } from "@/lib/plan-limits";
-
-// ── US Counties registry ──────────────────────────────────────────────────────
-
-const US_COUNTIES: { county: string; state: string; city: string }[] = [
-  { county: "Jefferson",      state: "AL", city: "Birmingham"       },
-  { county: "Madison",        state: "AL", city: "Huntsville"       },
-  { county: "Mobile",         state: "AL", city: "Mobile"           },
-  { county: "Anchorage",      state: "AK", city: "Anchorage"        },
-  { county: "Maricopa",       state: "AZ", city: "Phoenix"          },
-  { county: "Pima",           state: "AZ", city: "Tucson"           },
-  { county: "Pinal",          state: "AZ", city: "Coolidge"         },
-  { county: "Pulaski",        state: "AR", city: "Little Rock"      },
-  { county: "Washington",     state: "AR", city: "Fayetteville"     },
-  { county: "Los Angeles",    state: "CA", city: "Los Angeles"      },
-  { county: "San Diego",      state: "CA", city: "San Diego"        },
-  { county: "Orange",         state: "CA", city: "Santa Ana"        },
-  { county: "Riverside",      state: "CA", city: "Riverside"        },
-  { county: "San Bernardino", state: "CA", city: "San Bernardino"   },
-  { county: "Santa Clara",    state: "CA", city: "San Jose"         },
-  { county: "Alameda",        state: "CA", city: "Oakland"          },
-  { county: "Sacramento",     state: "CA", city: "Sacramento"       },
-  { county: "Contra Costa",   state: "CA", city: "Martinez"         },
-  { county: "Fresno",         state: "CA", city: "Fresno"           },
-  { county: "San Francisco",  state: "CA", city: "San Francisco"    },
-  { county: "El Paso",        state: "CO", city: "Colorado Springs" },
-  { county: "Denver",         state: "CO", city: "Denver"           },
-  { county: "Arapahoe",       state: "CO", city: "Centennial"       },
-  { county: "Jefferson",      state: "CO", city: "Golden"           },
-  { county: "Adams",          state: "CO", city: "Brighton"         },
-  { county: "Boulder",        state: "CO", city: "Boulder"          },
-  { county: "Fairfield",      state: "CT", city: "Bridgeport"       },
-  { county: "Hartford",       state: "CT", city: "Hartford"         },
-  { county: "New Haven",      state: "CT", city: "New Haven"        },
-  { county: "New Castle",     state: "DE", city: "Wilmington"       },
-  { county: "Miami-Dade",     state: "FL", city: "Miami"            },
-  { county: "Broward",        state: "FL", city: "Fort Lauderdale"  },
-  { county: "Palm Beach",     state: "FL", city: "West Palm Beach"  },
-  { county: "Hillsborough",   state: "FL", city: "Tampa"            },
-  { county: "Orange",         state: "FL", city: "Orlando"          },
-  { county: "Pinellas",       state: "FL", city: "Clearwater"       },
-  { county: "Duval",          state: "FL", city: "Jacksonville"     },
-  { county: "Lee",            state: "FL", city: "Fort Myers"       },
-  { county: "Polk",           state: "FL", city: "Bartow"           },
-  { county: "Brevard",        state: "FL", city: "Viera"            },
-  { county: "Fulton",         state: "GA", city: "Atlanta"          },
-  { county: "Gwinnett",       state: "GA", city: "Lawrenceville"    },
-  { county: "Cobb",           state: "GA", city: "Marietta"         },
-  { county: "DeKalb",         state: "GA", city: "Decatur"          },
-  { county: "Honolulu",       state: "HI", city: "Honolulu"         },
-  { county: "Ada",            state: "ID", city: "Boise"            },
-  { county: "Canyon",         state: "ID", city: "Caldwell"         },
-  { county: "Cook",           state: "IL", city: "Chicago"          },
-  { county: "DuPage",         state: "IL", city: "Wheaton"          },
-  { county: "Lake",           state: "IL", city: "Waukegan"         },
-  { county: "Will",           state: "IL", city: "Joliet"           },
-  { county: "Marion",         state: "IN", city: "Indianapolis"     },
-  { county: "Lake",           state: "IN", city: "Crown Point"      },
-  { county: "Hamilton",       state: "IN", city: "Noblesville"      },
-  { county: "Polk",           state: "IA", city: "Des Moines"       },
-  { county: "Linn",           state: "IA", city: "Cedar Rapids"     },
-  { county: "Johnson",        state: "KS", city: "Olathe"           },
-  { county: "Sedgwick",       state: "KS", city: "Wichita"          },
-  { county: "Jefferson",      state: "KY", city: "Louisville"       },
-  { county: "Fayette",        state: "KY", city: "Lexington"        },
-  { county: "Jefferson",      state: "LA", city: "Metairie"         },
-  { county: "Orleans",        state: "LA", city: "New Orleans"      },
-  { county: "East Baton Rouge",state: "LA", city: "Baton Rouge"    },
-  { county: "Cumberland",     state: "ME", city: "Portland"         },
-  { county: "Montgomery",     state: "MD", city: "Rockville"        },
-  { county: "Prince George's",state: "MD", city: "Upper Marlboro"   },
-  { county: "Baltimore",      state: "MD", city: "Towson"           },
-  { county: "Middlesex",      state: "MA", city: "Lowell"           },
-  { county: "Worcester",      state: "MA", city: "Worcester"        },
-  { county: "Suffolk",        state: "MA", city: "Boston"           },
-  { county: "Essex",          state: "MA", city: "Salem"            },
-  { county: "Wayne",          state: "MI", city: "Detroit"          },
-  { county: "Oakland",        state: "MI", city: "Pontiac"          },
-  { county: "Macomb",         state: "MI", city: "Mount Clemens"    },
-  { county: "Kent",           state: "MI", city: "Grand Rapids"     },
-  { county: "Hennepin",       state: "MN", city: "Minneapolis"      },
-  { county: "Ramsey",         state: "MN", city: "St. Paul"         },
-  { county: "Dakota",         state: "MN", city: "Hastings"         },
-  { county: "Anoka",          state: "MN", city: "Anoka"            },
-  { county: "Hinds",          state: "MS", city: "Jackson"          },
-  { county: "Harrison",       state: "MS", city: "Gulfport"         },
-  { county: "St. Louis",      state: "MO", city: "Clayton"          },
-  { county: "Jackson",        state: "MO", city: "Kansas City"      },
-  { county: "St. Charles",    state: "MO", city: "St. Charles"      },
-  { county: "Yellowstone",    state: "MT", city: "Billings"         },
-  { county: "Missoula",       state: "MT", city: "Missoula"         },
-  { county: "Douglas",        state: "NE", city: "Omaha"            },
-  { county: "Lancaster",      state: "NE", city: "Lincoln"          },
-  { county: "Clark",          state: "NV", city: "Las Vegas"        },
-  { county: "Washoe",         state: "NV", city: "Reno"             },
-  { county: "Hillsborough",   state: "NH", city: "Manchester"       },
-  { county: "Rockingham",     state: "NH", city: "Brentwood"        },
-  { county: "Bergen",         state: "NJ", city: "Hackensack"       },
-  { county: "Middlesex",      state: "NJ", city: "New Brunswick"    },
-  { county: "Essex",          state: "NJ", city: "Newark"           },
-  { county: "Hudson",         state: "NJ", city: "Jersey City"      },
-  { county: "Monmouth",       state: "NJ", city: "Freehold"         },
-  { county: "Bernalillo",     state: "NM", city: "Albuquerque"      },
-  { county: "Kings",          state: "NY", city: "Brooklyn"         },
-  { county: "Queens",         state: "NY", city: "Queens"           },
-  { county: "New York",       state: "NY", city: "Manhattan"        },
-  { county: "Suffolk",        state: "NY", city: "Riverhead"        },
-  { county: "Nassau",         state: "NY", city: "Mineola"          },
-  { county: "Bronx",          state: "NY", city: "Bronx"            },
-  { county: "Westchester",    state: "NY", city: "White Plains"     },
-  { county: "Erie",           state: "NY", city: "Buffalo"          },
-  { county: "Monroe",         state: "NY", city: "Rochester"        },
-  { county: "Mecklenburg",    state: "NC", city: "Charlotte"        },
-  { county: "Wake",           state: "NC", city: "Raleigh"          },
-  { county: "Guilford",       state: "NC", city: "Greensboro"       },
-  { county: "Forsyth",        state: "NC", city: "Winston-Salem"    },
-  { county: "Durham",         state: "NC", city: "Durham"           },
-  { county: "Cass",           state: "ND", city: "Fargo"            },
-  { county: "Franklin",       state: "OH", city: "Columbus"         },
-  { county: "Cuyahoga",       state: "OH", city: "Cleveland"        },
-  { county: "Hamilton",       state: "OH", city: "Cincinnati"       },
-  { county: "Summit",         state: "OH", city: "Akron"            },
-  { county: "Montgomery",     state: "OH", city: "Dayton"           },
-  { county: "Oklahoma",       state: "OK", city: "Oklahoma City"    },
-  { county: "Tulsa",          state: "OK", city: "Tulsa"            },
-  { county: "Multnomah",      state: "OR", city: "Portland"         },
-  { county: "Washington",     state: "OR", city: "Hillsboro"        },
-  { county: "Clackamas",      state: "OR", city: "Oregon City"      },
-  { county: "Lane",           state: "OR", city: "Eugene"           },
-  { county: "Philadelphia",   state: "PA", city: "Philadelphia"     },
-  { county: "Allegheny",      state: "PA", city: "Pittsburgh"       },
-  { county: "Montgomery",     state: "PA", city: "Norristown"       },
-  { county: "Bucks",          state: "PA", city: "Doylestown"       },
-  { county: "Providence",     state: "RI", city: "Providence"       },
-  { county: "Greenville",     state: "SC", city: "Greenville"       },
-  { county: "Richland",       state: "SC", city: "Columbia"         },
-  { county: "Charleston",     state: "SC", city: "Charleston"       },
-  { county: "Minnehaha",      state: "SD", city: "Sioux Falls"      },
-  { county: "Shelby",         state: "TN", city: "Memphis"          },
-  { county: "Davidson",       state: "TN", city: "Nashville"        },
-  { county: "Knox",           state: "TN", city: "Knoxville"        },
-  { county: "Hamilton",       state: "TN", city: "Chattanooga"      },
-  { county: "Harris",         state: "TX", city: "Houston"          },
-  { county: "Dallas",         state: "TX", city: "Dallas"           },
-  { county: "Tarrant",        state: "TX", city: "Fort Worth"       },
-  { county: "Bexar",          state: "TX", city: "San Antonio"      },
-  { county: "Travis",         state: "TX", city: "Austin"           },
-  { county: "Collin",         state: "TX", city: "McKinney"         },
-  { county: "Denton",         state: "TX", city: "Denton"           },
-  { county: "Hidalgo",        state: "TX", city: "Edinburg"         },
-  { county: "Fort Bend",      state: "TX", city: "Richmond"         },
-  { county: "El Paso",        state: "TX", city: "El Paso"          },
-  { county: "Salt Lake",      state: "UT", city: "Salt Lake City"   },
-  { county: "Utah",           state: "UT", city: "Provo"            },
-  { county: "Davis",          state: "UT", city: "Farmington"       },
-  { county: "Weber",          state: "UT", city: "Ogden"            },
-  { county: "Chittenden",     state: "VT", city: "Burlington"       },
-  { county: "Fairfax",        state: "VA", city: "Fairfax"          },
-  { county: "Prince William", state: "VA", city: "Manassas"         },
-  { county: "Loudoun",        state: "VA", city: "Leesburg"         },
-  { county: "Chesterfield",   state: "VA", city: "Chesterfield"     },
-  { county: "Henrico",        state: "VA", city: "Richmond"         },
-  { county: "King",           state: "WA", city: "Seattle"          },
-  { county: "Pierce",         state: "WA", city: "Tacoma"           },
-  { county: "Snohomish",      state: "WA", city: "Everett"          },
-  { county: "Spokane",        state: "WA", city: "Spokane"          },
-  { county: "Clark",          state: "WA", city: "Vancouver"        },
-  { county: "Kanawha",        state: "WV", city: "Charleston"       },
-  { county: "Milwaukee",      state: "WI", city: "Milwaukee"        },
-  { county: "Dane",           state: "WI", city: "Madison"          },
-  { county: "Waukesha",       state: "WI", city: "Waukesha"         },
-  { county: "Laramie",        state: "WY", city: "Cheyenne"         },
-  { county: "Natrona",        state: "WY", city: "Casper"           },
-];
 
 // ── Display helpers ────────────────────────────────────────────────────────────
 
@@ -1040,6 +867,165 @@ function PropertyLeadCard({
   );
 }
 
+// ── Full-Screen Mining Display ─────────────────────────────────────────────────
+
+const MINING_PHASES = [
+  { key: "scraping",  label: "Fetching property records",  icon: "⛏" },
+  { key: "enriching", label: "Scoring properties",          icon: "📊" },
+  { key: "grading",   label: "Grading gems",                icon: "💎" },
+  { key: "saving",    label: "Saving leads",                icon: "💾" },
+  { key: "complete",  label: "Complete",                    icon: "✓"  },
+];
+
+function MiningFullscreen({
+  status,
+  phase,
+  zipCodes,
+  onDismiss,
+}: {
+  status: "running" | "complete";
+  phase: string;
+  zipCodes: string[];
+  onDismiss: () => void;
+}) {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (status !== "running") return;
+    const t = setInterval(() => setTick((n) => n + 1), 800);
+    return () => clearInterval(t);
+  }, [status]);
+
+  const currentPhaseKey = MINING_PHASES.findIndex((p) =>
+    phase.toLowerCase().includes(p.key)
+  );
+  const phaseIndex = currentPhaseKey >= 0 ? currentPhaseKey : 0;
+  const dots = ".".repeat((tick % 3) + 1);
+
+  return (
+    <div
+      className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
+      style={{ background: CAVE.deep }}
+    >
+      {/* Subtle animated grid */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(${GEM.green}08 1px, transparent 1px), linear-gradient(90deg, ${GEM.green}08 1px, transparent 1px)`,
+          backgroundSize: "40px 40px",
+          maskImage: "radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%)",
+        }}
+      />
+
+      {/* Glow core */}
+      <div
+        className="absolute w-96 h-96 rounded-full pointer-events-none"
+        style={{
+          background: status === "complete"
+            ? `radial-gradient(circle, ${GEM.green}18 0%, transparent 70%)`
+            : `radial-gradient(circle, ${GEM.green}${status === "running" ? "12" : "08"} 0%, transparent 70%)`,
+          top: "50%", left: "50%",
+          transform: "translate(-50%, -50%)",
+          transition: "background 1s ease",
+        }}
+      />
+
+      <div className="relative z-10 flex flex-col items-center gap-8 px-8 max-w-lg w-full">
+
+        {/* Icon */}
+        <div
+          className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
+          style={{
+            background: `${GEM.green}12`,
+            border: `1px solid ${GEM.green}${status === "complete" ? "60" : "28"}`,
+            boxShadow: status === "complete" ? `0 0 40px ${GEM.green}25` : "none",
+          }}
+        >
+          {status === "complete" ? "💎" : "⛏"}
+        </div>
+
+        {/* Title */}
+        <div className="text-center space-y-2">
+          <h2 className="text-[22px] font-bold text-white tracking-tight">
+            {status === "complete" ? "Mine Complete" : `Mining${dots}`}
+          </h2>
+          <p className="text-[13px] text-neutral-500">
+            {status === "complete"
+              ? "New leads have been added to your pipeline"
+              : phase || "Starting up..."}
+          </p>
+        </div>
+
+        {/* ZIP badges */}
+        <div className="flex flex-wrap justify-center gap-2">
+          {zipCodes.map((z) => (
+            <span
+              key={z}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold"
+              style={{ background: `${GEM.green}10`, border: `1px solid ${GEM.green}25`, color: GEM.green }}
+            >
+              <MapPin className="w-3 h-3" />
+              {z}
+            </span>
+          ))}
+        </div>
+
+        {/* Phase progress */}
+        <div className="w-full space-y-2">
+          {MINING_PHASES.filter((p) => p.key !== "complete").map((p, i) => {
+            const done    = i < phaseIndex || status === "complete";
+            const active  = i === phaseIndex && status === "running";
+            return (
+              <div
+                key={p.key}
+                className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                style={{
+                  background: done ? `${GEM.green}10` : active ? `${GEM.green}08` : CAVE.surface2,
+                  border: `1px solid ${done || active ? GEM.green + "25" : CAVE.stoneMid}`,
+                }}
+              >
+                <span className="text-[14px] w-5 text-center">
+                  {done ? "✓" : active ? p.icon : "○"}
+                </span>
+                <span
+                  className="text-[12px] font-medium flex-1"
+                  style={{ color: done ? GEM.green : active ? "#e5e5e5" : "#404040" }}
+                >
+                  {p.label}
+                </span>
+                {active && (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: GEM.green }} />
+                )}
+                {done && (
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: GEM.green }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Action */}
+        {status === "complete" ? (
+          <button
+            onClick={onDismiss}
+            className="px-8 py-3 rounded-xl text-[13px] font-bold text-black transition-all"
+            style={{
+              background: GEM.green,
+              boxShadow: `0 0 24px ${GEM.green}35`,
+            }}
+          >
+            View New Leads →
+          </button>
+        ) : (
+          <p className="text-[10px] text-neutral-700 text-center">
+            Mining runs in the background — you can leave this tab
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 
@@ -1072,14 +1058,24 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   const [minEquity, setMinEquity]         = useState<number>(30);
   const [minYearsOwned, setMinYearsOwned] = useState<number>(5);
 
-  // ── County search ─────────────────────────────────────────────────────────
-  const [selectedCounties, setSelectedCounties]     = useState<string[]>([]);
-  const [countySearch, setCountySearch]             = useState("");
-  const [showCountyDropdown, setShowCountyDropdown] = useState(false);
+  // ── ZIP code input ────────────────────────────────────────────────────────
+  const [selectedZips, setSelectedZips] = useState<string[]>([]);
+  const [zipInput, setZipInput]         = useState("");
+  const [zipError, setZipError]         = useState("");
 
   // ── Mining ────────────────────────────────────────────────────────────────
   const [leadType, setLeadType]         = useState<"business" | "property">("property");
   const [miningStatus, setMiningStatus] = useState<"idle" | "running" | "complete" | "error">("idle");
+
+  // ── Usage tracking ────────────────────────────────────────────────────────
+  const [leadsThisMonth, setLeadsThisMonth] = useState<number>(0);
+
+  useEffect(() => {
+    fetch("/api/leads/usage")
+      .then((r) => r.json())
+      .then((d) => setLeadsThisMonth(d.leadsThisMonth ?? 0))
+      .catch(() => {});
+  }, [miningStatus]);
   const [miningPhase, setMiningPhase]   = useState<string>("");
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const jobIdRef  = useRef<string | null>(null);
@@ -1149,27 +1145,22 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   // ── Cleanup mining poll on unmount ────────────────────────────────────────
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
 
-  // ── County search helpers ─────────────────────────────────────────────────
-  const filteredCountyOptions = US_COUNTIES.filter((c) => {
-    const key = `${c.county}, ${c.state}`;
-    if (selectedCounties.includes(key)) return false;
-    const q = countySearch.toLowerCase();
-    return (
-      c.county.toLowerCase().includes(q) ||
-      c.state.toLowerCase().includes(q) ||
-      c.city.toLowerCase().includes(q)
-    );
-  }).slice(0, 20);
+  // ── ZIP helpers ───────────────────────────────────────────────────────────
+  const { maxZipCodes } = getLimits(plan);
+  const zipLimit = maxZipCodes ?? 999;
 
-  const addCounty = (key: string) => {
-    if (selectedCounties.length >= 3) return;
-    setSelectedCounties((prev) => [...prev, key]);
-    setCountySearch("");
-    setShowCountyDropdown(false);
+  const addZip = (raw: string) => {
+    const zip = raw.trim().replace(/\D/g, "").slice(0, 5);
+    if (zip.length !== 5) { setZipError("Enter a valid 5-digit ZIP"); return; }
+    if (selectedZips.includes(zip)) { setZipError("Already added"); return; }
+    if (selectedZips.length >= zipLimit) { setZipError(`${plan} plan allows ${zipLimit} ZIP${zipLimit === 1 ? "" : "s"}`); return; }
+    setSelectedZips((prev) => [...prev, zip]);
+    setZipInput("");
+    setZipError("");
   };
 
-  const removeCounty = (key: string) =>
-    setSelectedCounties((prev) => prev.filter((c) => c !== key));
+  const removeZip = (zip: string) =>
+    setSelectedZips((prev) => prev.filter((z) => z !== zip));
 
   // ── Property type toggle ──────────────────────────────────────────────────
   const togglePropertyType = (type: string) =>
@@ -1212,7 +1203,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   };
 
   const handleStartMine = async () => {
-    if (selectedCounties.length === 0) return;
+    if (selectedZips.length === 0) return;
     setMiningStatus("running");
     setMiningPhase("Starting mine...");
     onMiningChange?.(true);
@@ -1220,21 +1211,11 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
     let jobId: string;
     try {
       if (leadType === "property") {
-        // Parse "County, ST" → { county, state }
-        const parsed = selectedCounties.map((c) => {
-          const parts = c.split(",").map((s) => s.trim());
-          return { county: parts[0], state: parts[1] ?? "" };
-        });
-        // Group by state (take first state if mixed — unlikely)
-        const state    = parsed[0]?.state ?? "";
-        const counties = parsed.map((p) => p.county);
-
         const res = await fetch("/api/mining/property-start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            counties,
-            state,
+            zipCodes:      selectedZips,
             propertyTypes: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : ["single_family"],
             minYearsOwned: minYearsOwned,
             minEquityPct:  minEquity,
@@ -1250,7 +1231,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
           body: JSON.stringify({
             clientId:   realtorSlug ?? "default",
             verticalId: "real-estate",
-            locations:  selectedCounties,
+            locations:  selectedZips,
           }),
         });
         if (!res.ok) throw new Error(`Start failed: ${res.status}`);
@@ -1267,7 +1248,6 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
 
     jobIdRef.current = jobId;
 
-    // Poll for progress every 3 s
     stopPolling();
     pollRef.current = setInterval(async () => {
       try {
@@ -1275,7 +1255,6 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
         if (!res.ok) return;
         const data = await res.json();
 
-        // Update phase label from real progress
         const phase: string = data.progress?.phase ?? "";
         if (phase && PHASE_LABELS[phase]) setMiningPhase(PHASE_LABELS[phase]);
 
@@ -1292,7 +1271,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             {
               id: `n${Date.now()}`,
               type: "mining_complete" as const,
-              title: `Mining complete — ${selectedCounties.join(" & ")}`,
+              title: `Mining complete — ${selectedZips.join(", ")}`,
               body: `Found ${total} opportunity leads. ${elite} Elite Gems, ${refined} Refined.`,
               read: false,
               created_at: new Date().toISOString(),
@@ -1504,18 +1483,42 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             </div>
 
             <div className="space-y-2">
-              {/* Selected county chips */}
-              {selectedCounties.length > 0 && (
+              {/* Usage bar */}
+              {(() => {
+                const { maxLeadsPerMonth } = getLimits(plan);
+                const cap = maxLeadsPerMonth ?? 0;
+                const pct = cap > 0 ? Math.min((leadsThisMonth / cap) * 100, 100) : 0;
+                const nearLimit = cap > 0 && leadsThisMonth >= cap * 0.8;
+                return cap > 0 ? (
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] text-neutral-600">Leads this month</span>
+                      <span className="text-[10px] font-semibold tabular-nums" style={{ color: nearLimit ? GEM.red : "#525252" }}>
+                        {leadsThisMonth} / {cap}
+                      </span>
+                    </div>
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: CAVE.stoneMid }}>
+                      <div
+                        className="h-full rounded-full transition-all"
+                        style={{ width: `${pct}%`, background: nearLimit ? GEM.red : GEM.green }}
+                      />
+                    </div>
+                  </div>
+                ) : null;
+              })()}
+
+              {/* ZIP chip row */}
+              {selectedZips.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedCounties.map((c) => (
+                  {selectedZips.map((z) => (
                     <span
-                      key={c}
+                      key={z}
                       className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg border font-medium"
                       style={{ background: `${GEM.green}12`, borderColor: `${GEM.green}28`, color: GEM.green }}
                     >
                       <MapPin className="w-2.5 h-2.5" />
-                      {c}
-                      <button onClick={() => removeCounty(c)} className="ml-0.5 opacity-70 hover:opacity-100">
+                      {z}
+                      <button onClick={() => removeZip(z)} className="ml-0.5 opacity-70 hover:opacity-100">
                         <X className="w-2.5 h-2.5" />
                       </button>
                     </span>
@@ -1523,54 +1526,44 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
                 </div>
               )}
 
-              {/* County search */}
-              {selectedCounties.length < 3 ? (
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-600 pointer-events-none" />
-                  <input
-                    type="text"
-                    placeholder={selectedCounties.length === 0 ? "Search any US county..." : "Add another county..."}
-                    value={countySearch}
-                    onChange={(e) => { setCountySearch(e.target.value); setShowCountyDropdown(true); }}
-                    onFocus={() => setShowCountyDropdown(true)}
-                    onBlur={() => setTimeout(() => setShowCountyDropdown(false), 150)}
-                    className="w-full pl-8 pr-3 py-2 rounded-xl text-[12px] text-neutral-300 placeholder-neutral-600 outline-none transition-colors"
-                    style={{
-                      background:  CAVE.surface2,
-                      border:      `1px solid ${showCountyDropdown && countySearch ? GEM.green + "30" : CAVE.stoneMid}`,
-                    }}
-                  />
-                  {showCountyDropdown && countySearch && filteredCountyOptions.length > 0 && (
-                    <div
-                      className="absolute top-full left-0 right-0 mt-1 rounded-xl border overflow-hidden z-50 max-h-52 overflow-y-auto"
-                      style={{ background: CAVE.stoneDeep, borderColor: CAVE.stoneMid, boxShadow: "0 8px 24px rgba(0,0,0,0.5)" }}
-                    >
-                      {filteredCountyOptions.map((c) => {
-                        const key = `${c.county}, ${c.state}`;
-                        return (
-                          <button
-                            key={key}
-                            onMouseDown={() => addCounty(key)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-white/[0.05]"
-                          >
-                            <MapPin className="w-2.5 h-2.5 text-neutral-600 flex-shrink-0" />
-                            <span className="text-[12px] text-neutral-300 font-medium">{c.county}</span>
-                            <span className="text-[11px] text-neutral-600">{c.state}</span>
-                            <span className="text-[10px] text-neutral-700 ml-auto">{c.city}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
+              {/* ZIP input */}
+              {selectedZips.length < zipLimit ? (
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-600 pointer-events-none" />
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={5}
+                      placeholder={selectedZips.length === 0 ? "Enter ZIP code (e.g. 90210)" : "Add another ZIP..."}
+                      value={zipInput}
+                      onChange={(e) => { setZipInput(e.target.value.replace(/\D/g, "")); setZipError(""); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") addZip(zipInput); }}
+                      className="w-full pl-8 pr-3 py-2 rounded-xl text-[12px] text-neutral-300 placeholder-neutral-600 outline-none transition-colors"
+                      style={{
+                        background: CAVE.surface2,
+                        border: `1px solid ${zipError ? GEM.red + "50" : CAVE.stoneMid}`,
+                      }}
+                    />
+                  </div>
+                  <button
+                    onClick={() => addZip(zipInput)}
+                    disabled={zipInput.length !== 5}
+                    className="px-3 py-2 rounded-xl text-[11px] font-semibold transition-all disabled:opacity-40"
+                    style={{ background: `${GEM.green}18`, border: `1px solid ${GEM.green}30`, color: GEM.green }}
+                  >
+                    Add
+                  </button>
                 </div>
               ) : (
                 <p
                   className="text-[10px] text-neutral-600 text-center py-1.5 px-2 rounded-xl"
                   style={{ background: CAVE.surface2, border: `1px solid ${CAVE.stoneMid}` }}
                 >
-                  Max 3 counties — remove one to add more
+                  Max {zipLimit} ZIP{zipLimit === 1 ? "" : "s"} on {plan} plan — remove one to add more
                 </p>
               )}
+              {zipError && <p className="text-[10px]" style={{ color: GEM.red }}>{zipError}</p>}
 
               {/* Property type chips */}
               <div className="flex flex-wrap gap-1.5 pt-0.5">
@@ -1667,18 +1660,18 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
               ) : (
                 <button
                   onClick={handleStartMine}
-                  disabled={selectedCounties.length === 0}
+                  disabled={selectedZips.length === 0}
                   className="w-full rounded-xl px-4 py-2.5 flex items-center justify-center gap-2 text-[12px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
-                    background: selectedCounties.length > 0 ? GEM.green : CAVE.surface2,
-                    color:      selectedCounties.length > 0 ? "#000" : "#525252",
-                    boxShadow:  selectedCounties.length > 0 ? `0 0 16px rgba(0,255,136,0.25)` : "none",
+                    background: selectedZips.length > 0 ? GEM.green : CAVE.surface2,
+                    color:      selectedZips.length > 0 ? "#000" : "#525252",
+                    boxShadow:  selectedZips.length > 0 ? `0 0 16px rgba(0,255,136,0.25)` : "none",
                   }}
                 >
                   <Play className="w-3.5 h-3.5" />
-                  {selectedCounties.length === 0
-                    ? "Select a county"
-                    : `Mine ${selectedCounties.length} ${selectedCounties.length === 1 ? "County" : "Counties"}`}
+                  {selectedZips.length === 0
+                    ? "Enter a ZIP code to mine"
+                    : `Mine ${selectedZips.length} ZIP${selectedZips.length === 1 ? "" : "s"}`}
                 </button>
               )}
 
@@ -1822,8 +1815,18 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
           </div>
         </div>
 
+        {/* ── FULL-SCREEN MINING DISPLAY ────────────────────────────────── */}
+        {(miningStatus === "running" || miningStatus === "complete") && (
+          <MiningFullscreen
+            status={miningStatus}
+            phase={miningPhase}
+            zipCodes={selectedZips}
+            onDismiss={() => { setMiningStatus("idle"); setMiningPhase(""); }}
+          />
+        )}
+
         {/* ── CENTER COLUMN ────────────────────────────────────────────── */}
-        <div className="flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0">
+        <div className={cn("flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete") && "hidden")}>
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -1939,7 +1942,49 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
               />
             ))}
 
-            {filteredLeads.length === 0 && (
+            {filteredLeads.length === 0 && ALL_LEADS.length === 0 && (
+              <div
+                className="rounded-2xl p-8 text-center space-y-6"
+                style={{ background: `${GEM.green}06`, border: `1px solid ${GEM.green}18` }}
+              >
+                <div className="flex justify-center">
+                  <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                    style={{ background: `${GEM.green}14`, border: `1px solid ${GEM.green}28` }}
+                  >
+                    <Play className="w-7 h-7" style={{ color: GEM.green }} />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[15px] font-bold text-white mb-1">Start Mining Leads</p>
+                  <p className="text-[12px] text-neutral-500 leading-relaxed max-w-xs mx-auto">
+                    Enter ZIP codes in the left panel, then click Mine to find motivated property owners in your area.
+                  </p>
+                </div>
+                <div className="flex justify-center gap-6 text-center">
+                  {[
+                    { step: "1", label: "Enter ZIPs" },
+                    { step: "2", label: "Set filters" },
+                    { step: "3", label: "Mine & review" },
+                  ].map(({ step, label }) => (
+                    <div key={step} className="space-y-1.5">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold mx-auto"
+                        style={{ background: `${GEM.green}18`, border: `1px solid ${GEM.green}30`, color: GEM.green }}
+                      >
+                        {step}
+                      </div>
+                      <p className="text-[10px] text-neutral-600">{label}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-neutral-700">
+                  Nightly auto-mine runs at 2 AM — or run manually anytime
+                </p>
+              </div>
+            )}
+
+            {filteredLeads.length === 0 && ALL_LEADS.length > 0 && (
               <div className="py-16 text-center space-y-2">
                 <p className="text-[12px] text-neutral-600">No leads match your current filters</p>
                 <button
@@ -1956,7 +2001,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
 
         {/* ── RIGHT COLUMN ─────────────────────────────────────────────── */}
         <div
-          className="w-72 flex-shrink-0 flex flex-col gap-5 p-5 overflow-y-auto"
+          className={cn("w-72 flex-shrink-0 flex flex-col gap-5 p-5 overflow-y-auto", (miningStatus === "running" || miningStatus === "complete") && "hidden")}
           style={{ borderLeft: `1px solid ${CAVE.stoneMid}` }}
         >
           {/* AI Scoring Engine */}

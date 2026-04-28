@@ -7,33 +7,33 @@ import { Loader2, X, MapPin, ChevronRight } from "lucide-react";
 import { TargetingCard } from "@/components/onboarding/targeting-card";
 import type { TargetingFormData } from "@/components/onboarding/targeting-card";
 
-const SUGGESTED_MARKETS = [
-  "Travis County, TX",
-  "Harris County, TX",
-  "Miami-Dade County, FL",
-  "Maricopa County, AZ",
-  "King County, WA",
-  "Clark County, NV",
-  "Fulton County, GA",
-  "Orange County, CA",
+const SUGGESTED_ZIPS = [
+  "78701", // Austin, TX
+  "77002", // Houston, TX
+  "33101", // Miami, FL
+  "85001", // Phoenix, AZ
+  "98101", // Seattle, WA
+  "89101", // Las Vegas, NV
+  "30301", // Atlanta, GA
+  "92801", // Anaheim, CA
 ];
 
 type Stage = "profile" | "targeting";
 
 export default function OnboardingPage() {
-  const [stage, setStage]             = useState<Stage>("profile");
-  const [realtorId, setRealtorId]     = useState<string | null>(null);
-  const [name, setName]               = useState("");
-  const [countyInput, setCountyInput] = useState("");
-  const [counties, setCounties]       = useState<string[]>([]);
-  const [error, setError]             = useState("");
-  const [loading, setLoading]         = useState(false);
-  const [checking, setChecking]       = useState(true);
+  const [stage, setStage]         = useState<Stage>("profile");
+  const [realtorId, setRealtorId] = useState<string | null>(null);
+  const [name, setName]           = useState("");
+  const [zipInput, setZipInput]   = useState("");
+  const [zipCodes, setZipCodes]   = useState<string[]>([]);
+  const [zipError, setZipError]   = useState("");
+  const [error, setError]         = useState("");
+  const [loading, setLoading]     = useState(false);
+  const [checking, setChecking]   = useState(true);
   const [submittingTarget, setSubmittingTarget] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    // DEV PREVIEW: ?preview=1 skips auth so the form is visible without a session
     if (process.env.NODE_ENV === "development" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1") {
       setChecking(false);
       return;
@@ -51,7 +51,6 @@ export default function OnboardingPage() {
         .single();
 
       if (client) {
-        // Client exists — check if they already have search_areas configured
         const { data: realtor } = await supabase
           .from("realtors")
           .select("id")
@@ -66,20 +65,17 @@ export default function OnboardingPage() {
             .limit(1);
 
           if (areas && areas.length > 0) {
-            // Fully onboarded — go to dashboard
             router.push("/dashboard");
             return;
           }
 
-          // Has realtor but no search_areas — skip profile step, go straight to targeting
           setRealtorId(realtor.id);
-          if (client.target_locations?.length) setCounties(client.target_locations);
+          if (client.target_locations?.length) setZipCodes(client.target_locations);
           setStage("targeting");
           setChecking(false);
           return;
         }
 
-        // Has client but no realtor — create one then show targeting
         const slug = `user-${user.id.slice(0, 8)}-${Date.now()}`;
         const { data: newRealtor } = await supabase
           .from("realtors")
@@ -88,7 +84,7 @@ export default function OnboardingPage() {
           .single();
         if (newRealtor) {
           setRealtorId(newRealtor.id);
-          if (client.target_locations?.length) setCounties(client.target_locations);
+          if (client.target_locations?.length) setZipCodes(client.target_locations);
           setStage("targeting");
         } else {
           router.push("/dashboard");
@@ -102,26 +98,28 @@ export default function OnboardingPage() {
     checkAuth();
   }, [router]);
 
-  const addCounty = (value: string) => {
-    const trimmed = value.trim();
-    if (trimmed && !counties.includes(trimmed) && counties.length < 5) {
-      setCounties([...counties, trimmed]);
-      setCountyInput("");
-    }
+  const addZip = (raw: string) => {
+    const zip = raw.trim().replace(/\D/g, "").slice(0, 5);
+    if (zip.length !== 5) { setZipError("Enter a valid 5-digit ZIP code"); return; }
+    if (zipCodes.includes(zip)) { setZipError("Already added"); return; }
+    if (zipCodes.length >= 5) { setZipError("Max 5 ZIP codes for now"); return; }
+    setZipCodes((prev) => [...prev, zip]);
+    setZipInput("");
+    setZipError("");
   };
 
-  const removeCounty = (c: string) =>
-    setCounties(counties.filter((x) => x !== c));
+  const removeZip = (z: string) =>
+    setZipCodes((prev) => prev.filter((x) => x !== z));
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") { e.preventDefault(); addCounty(countyInput); }
+    if (e.key === "Enter") { e.preventDefault(); addZip(zipInput); }
   };
 
   // Stage 1: create client + realtor records, advance to targeting
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) { setError("Enter your name or business name."); return; }
-    if (counties.length === 0) { setError("Add at least one target county."); return; }
+    if (zipCodes.length === 0) { setError("Add at least one target ZIP code."); return; }
     setError("");
     setLoading(true);
 
@@ -129,12 +127,11 @@ export default function OnboardingPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setError("Session expired. Please sign in again."); setLoading(false); return; }
 
-    // Create client record
     const { error: clientError } = await supabase.from("clients").insert({
       user_id:          user.id,
       business_name:    name.trim(),
       industry:         "real_estate",
-      target_locations: counties,
+      target_locations: zipCodes,
     });
 
     if (clientError) {
@@ -143,12 +140,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Create realtor record (required for search_areas)
     const slug = `${name.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}-${Date.now()}`;
-    const firstCounty = counties[0] || "";
-    const parts = firstCounty.split(",");
-    const city = parts[0]?.trim() || firstCounty;
-    const state = parts[1]?.trim() || null;
 
     const { data: realtor, error: realtorError } = await supabase
       .from("realtors")
@@ -156,8 +148,8 @@ export default function OnboardingPage() {
         user_id:     user.id,
         name:        name.trim(),
         slug,
-        city,
-        state,
+        city:        "",
+        state:       null,
         brand_color: "#00FF88",
         plan:        "free",
       })
@@ -165,7 +157,6 @@ export default function OnboardingPage() {
       .single();
 
     if (realtorError || !realtor) {
-      // Realtor may already exist — try to fetch
       const { data: existing } = await supabase
         .from("realtors")
         .select("id")
@@ -175,7 +166,6 @@ export default function OnboardingPage() {
       if (existing) {
         setRealtorId(existing.id);
       } else {
-        // Non-fatal — skip targeting card
         router.push("/dashboard");
         return;
       }
@@ -194,57 +184,45 @@ export default function OnboardingPage() {
     setSubmittingTarget(true);
     const supabase = createClient();
 
-    // Combine cities from targeting with original counties
-    const allCities = [...new Set([...formData.cities, ...counties])];
+    // Merge ZIPs from profile step with any from the targeting card
+    const allZips = [...new Set([...zipCodes, ...(formData.zipCodes ?? [])])];
 
     await supabase.from("search_areas").insert({
-      realtor_id:           realtorId,
-      name:                 "Primary Mining Zone",
-      zip_codes:            formData.zipCodes,
-      cities:               allCities,
-      counties:             counties,
-      state:                null,
-      property_types:       formData.propertyTypes,
-      min_years_owned:      formData.minYearsOwned,
-      min_equity_pct:       formData.minEquityPct,
-      opportunity_types:    ["seller", "buyer"],
-      min_price:            formData.minPrice ? parseFloat(formData.minPrice) : null,
-      max_price:            formData.maxPrice ? parseFloat(formData.maxPrice) : null,
-      lead_type_preference: formData.leadTypePreference,
-      seller_signals:       formData.sellerSignals,
-      buyer_signals:        formData.buyerSignals,
-      deal_goal:            formData.dealGoal,
+      realtor_id:            realtorId,
+      name:                  "Primary Mining Zone",
+      zip_codes:             allZips,
+      cities:                formData.cities,
+      counties:              [],
+      state:                 null,
+      property_types:        formData.propertyTypes,
+      min_years_owned:       formData.minYearsOwned,
+      min_equity_pct:        formData.minEquityPct,
+      opportunity_types:     ["seller", "buyer"],
+      min_price:             formData.minPrice ? parseFloat(formData.minPrice) : null,
+      max_price:             formData.maxPrice ? parseFloat(formData.maxPrice) : null,
+      lead_type_preference:  formData.leadTypePreference,
+      seller_signals:        formData.sellerSignals,
+      buyer_signals:         formData.buyerSignals,
+      deal_goal:             formData.dealGoal,
       is_onboarding_profile: true,
     });
 
-    // Trigger first mining job automatically so the user sees leads immediately
-    try {
-      const allCounties = counties.length > 0 ? counties : formData.cities;
-      const firstEntry  = allCounties[0] || "";
-      const parts       = firstEntry.split(",");
-      const countyName  = parts[0]?.trim().replace(/\s+County$/i, "") || firstEntry;
-      const state       = parts[1]?.trim() || "";
-
-      if (countyName && state) {
-        const countyNames = allCounties
-          .filter((c) => c.split(",")[1]?.trim() === state)
-          .map((c) => c.split(",")[0].trim().replace(/\s+County$/i, ""));
-
+    // Trigger first mining job using ZIP codes
+    if (allZips.length > 0) {
+      try {
         await fetch("/api/mining/property-start", {
           method:  "POST",
           headers: { "Content-Type": "application/json" },
           body:    JSON.stringify({
-            counties:      countyNames.length > 0 ? countyNames : [countyName],
-            state,
+            zipCodes:      allZips,
             propertyTypes: formData.propertyTypes.length > 0 ? formData.propertyTypes : ["single_family"],
-            zipCodes:      formData.zipCodes,
             minYearsOwned: formData.minYearsOwned,
             minEquityPct:  formData.minEquityPct,
           }),
         });
+      } catch {
+        // Non-fatal — user still proceeds to dashboard
       }
-    } catch {
-      // Non-fatal — user still proceeds to dashboard
     }
 
     setSubmittingTarget(false);
@@ -309,32 +287,34 @@ export default function OnboardingPage() {
             />
           </div>
 
-          {/* Counties */}
+          {/* ZIP Codes */}
           <div>
             <label className="block text-[11px] font-semibold text-neutral-400 uppercase tracking-widest mb-2">
-              Target Counties / Markets
+              Target ZIP Codes
               <span className="ml-2 text-neutral-700 font-normal normal-case tracking-normal">up to 5</span>
             </label>
             <div className="flex gap-2">
               <input
                 type="text"
-                value={countyInput}
-                onChange={(e) => setCountyInput(e.target.value)}
+                inputMode="numeric"
+                maxLength={5}
+                value={zipInput}
+                onChange={(e) => { setZipInput(e.target.value.replace(/\D/g, "")); setZipError(""); }}
                 onKeyDown={handleKeyDown}
-                placeholder="Travis County, TX"
-                disabled={counties.length >= 5}
+                placeholder="e.g. 78701"
+                disabled={zipCodes.length >= 5}
                 className="flex-1 rounded-xl px-4 py-3 text-[13px] text-neutral-100 placeholder:text-neutral-700 outline-none transition-colors disabled:opacity-40"
                 style={{
                   background: "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  border: `1px solid ${zipError ? "rgba(255,59,48,0.4)" : "rgba(255,255,255,0.08)"}`,
                 }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = "rgba(0,255,136,0.4)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = zipError ? "rgba(255,59,48,0.4)" : "rgba(255,255,255,0.08)")}
               />
               <button
                 type="button"
-                onClick={() => addCounty(countyInput)}
-                disabled={counties.length >= 5 || !countyInput.trim()}
+                onClick={() => addZip(zipInput)}
+                disabled={zipCodes.length >= 5 || zipInput.length !== 5}
                 className="px-4 py-3 rounded-xl text-[12px] font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 style={{
                   background: "rgba(0,255,136,0.1)",
@@ -346,12 +326,16 @@ export default function OnboardingPage() {
               </button>
             </div>
 
-            {/* Added counties */}
-            {counties.length > 0 && (
+            {zipError && (
+              <p className="text-[11px] mt-1.5" style={{ color: "#FF3B30" }}>{zipError}</p>
+            )}
+
+            {/* Added ZIPs */}
+            {zipCodes.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2.5">
-                {counties.map((c) => (
+                {zipCodes.map((z) => (
                   <span
-                    key={c}
+                    key={z}
                     className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium"
                     style={{
                       background: "rgba(0,255,136,0.08)",
@@ -360,10 +344,10 @@ export default function OnboardingPage() {
                     }}
                   >
                     <MapPin className="w-2.5 h-2.5" />
-                    {c}
+                    {z}
                     <button
                       type="button"
-                      onClick={() => removeCounty(c)}
+                      onClick={() => removeZip(z)}
                       className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"
                     >
                       <X className="w-2.5 h-2.5" />
@@ -373,16 +357,16 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            {/* Suggested markets */}
-            {counties.length === 0 && (
+            {/* Suggested ZIPs */}
+            {zipCodes.length === 0 && (
               <div className="mt-3">
                 <p className="text-[10px] text-neutral-700 mb-2">Popular markets:</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {SUGGESTED_MARKETS.map((m) => (
+                  {SUGGESTED_ZIPS.map((z) => (
                     <button
-                      key={m}
+                      key={z}
                       type="button"
-                      onClick={() => addCounty(m)}
+                      onClick={() => addZip(z)}
                       className="text-[10px] px-2.5 py-1 rounded-lg transition-colors"
                       style={{
                         background: "rgba(255,255,255,0.03)",
@@ -390,7 +374,7 @@ export default function OnboardingPage() {
                         color: "#525252",
                       }}
                     >
-                      {m}
+                      {z}
                     </button>
                   ))}
                 </div>

@@ -3,6 +3,8 @@ export type Plan = "free" | "miner" | "operator" | "brokerage";
 export interface PlanLimits {
   countyScansPerMonth: number | null; // null = unlimited
   gradedLeadsPerMonth: number | null;
+  maxLeadsPerMonth:    number | null; // cap on leads mined per month
+  maxZipCodes:         number | null; // max ZIPs per mining run
   csvExport: boolean;
   aiAgents: number;
   teamSeats: number;
@@ -15,16 +17,20 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: {
     countyScansPerMonth: 3,
     gradedLeadsPerMonth: 10,
+    maxLeadsPerMonth:    25,
+    maxZipCodes:         1,
     csvExport:        false,
     aiAgents:         0,
     teamSeats:        1,
-    leadMachine:      false,
+    leadMachine:      true,  // free users can see the miner (limited)
     prioritySupport:  false,
     whiteLabel:       false,
   },
   miner: {
     countyScansPerMonth: 15,
     gradedLeadsPerMonth: 500,
+    maxLeadsPerMonth:    500,
+    maxZipCodes:         5,
     csvExport:        true,
     aiAgents:         1,
     teamSeats:        1,
@@ -35,6 +41,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   operator: {
     countyScansPerMonth: 50,
     gradedLeadsPerMonth: 2000,
+    maxLeadsPerMonth:    2000,
+    maxZipCodes:         15,
     csvExport:        true,
     aiAgents:         3,
     teamSeats:        3,
@@ -45,6 +53,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   brokerage: {
     countyScansPerMonth: null,
     gradedLeadsPerMonth: null,
+    maxLeadsPerMonth:    null,
+    maxZipCodes:         null,
     csvExport:        true,
     aiAgents:         10,
     teamSeats:        10,
