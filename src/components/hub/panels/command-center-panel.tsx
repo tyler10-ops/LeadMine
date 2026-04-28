@@ -56,7 +56,7 @@ const AGENTS: { name: string; icon: React.ElementType; note: string }[] = [
   { name: "Email Cron",     icon: CalendarCheck, note: "Daily briefs on" },
 ];
 
-const MARKET_SIGNALS: { direction: "bullish" | "neutral" | "bearish"; headline: string }[] = [
+const FALLBACK_SIGNALS: { direction: "bullish" | "neutral" | "bearish"; headline: string }[] = [
   { direction: "bullish", headline: "Mortgage rates near 6.4% — buyer demand stabilizing" },
   { direction: "neutral", headline: "Local inventory up 3% MoM — moderate competition" },
   { direction: "bearish", headline: "Fed signals caution on rate cuts through Q3" },
@@ -81,8 +81,9 @@ interface CommandCenterPanelProps {
 }
 
 export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
-  const [data, setData]       = useState<CommandCenterData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]             = useState<CommandCenterData | null>(null);
+  const [loading, setLoading]       = useState(true);
+  const [marketSignals, setMarketSignals] = useState(FALLBACK_SIGNALS);
 
   useEffect(() => {
     if (!isActive) return;
@@ -92,6 +93,19 @@ export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
       .then((d) => setData(d))
       .catch(() => setData(null))
       .finally(() => setLoading(false));
+
+    fetch("/api/market-intel?limit=3")
+      .then((r) => r.json())
+      .then((d) => {
+        const items = Array.isArray(d) ? d : (d.signals ?? d.data ?? []);
+        if (items.length > 0) {
+          setMarketSignals(items.slice(0, 3).map((s: { direction?: string; sentiment?: string; headline?: string; title?: string }) => ({
+            direction: (s.direction ?? s.sentiment ?? "neutral") as "bullish" | "neutral" | "bearish",
+            headline:  s.headline ?? s.title ?? "",
+          })));
+        }
+      })
+      .catch(() => {});
   }, [isActive]);
 
   const stages = data
@@ -384,7 +398,7 @@ export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
             </a>
           </div>
           <div className="space-y-2">
-            {MARKET_SIGNALS.map((s, i) => {
+            {marketSignals.map((s, i) => {
               const gemKey = SIGNAL_GEM[s.direction];
               return (
                 <div

@@ -68,174 +68,28 @@ const GRADE_CONFIG: Record<string, { label: string; color: string; bg: string }>
 
 const STAGE_LIST = ["new", "contacted", "qualified", "booked", "dead"] as const;
 
-// ── Pipeline mock data ─────────────────────────────────────────────────────────
+// ── PropertyLead type ─────────────────────────────────────────────────────────
 
-const stageBreakdown = [
-  { stage: "New",       count: 24, pct: 34 },
-  { stage: "Contacted", count: 18, pct: 26 },
-  { stage: "Qualified", count: 11, pct: 16 },
-  { stage: "Booked",    count: 8,  pct: 11 },
-  { stage: "Dead",      count: 9,  pct: 13 },
-];
-
-const leadSources = [
-  { source: "County Assessor", count: 34 },
-  { source: "Zillow",          count: 18 },
-  { source: "Referral",        count: 12 },
-  { source: "Social",          count: 6  },
-];
-
-const followUpQueue = [
-  { name: "Robert Whitfield", action: "Initial outreach call",  due: "Today",     urgency: "high"   },
-  { name: "Patricia Novak",   action: "Follow-up — absentee",   due: "Today",     urgency: "high"   },
-  { name: "Thomas Reeves",    action: "Email drip day 3",       due: "Tomorrow",  urgency: "medium" },
-  { name: "Marcus Delgado",   action: "Qualification call",     due: "This week", urgency: "low"    },
-];
-
-const aiScoreFeed = [
-  { name: "Denise Wu",        score: 100, delta: "+12", reason: "Absentee 31-yr owner — max signals"  },
-  { name: "Gloria Kim",       score: 95,  delta: "+8",  reason: "26-yr hold, 88% equity, absentee"   },
-  { name: "Robert Whitfield", score: 91,  delta: "+5",  reason: "18-yr owner, high equity confirmed" },
-];
-
-const agentStatus = [
-  { name: "Mining Agent Alpha", status: "active",  target: "Travis County scan" },
-  { name: "Voice Agent Beta",   status: "calling", target: "Robert Whitfield"   },
-  { name: "Booking Agent",      status: "idle",    target: null                 },
-];
-
-// ── Property leads ────────────────────────────────────────────────────────────
-
-const INITIAL_LEADS = [
-  {
-    id: "1",
-    name: "Denise Wu",
-    propertyAddress: "879 Ironwood Circle",
-    city: "Austin",
-    county: "Travis",
-    state: "TX",
-    propertyType: "multi_family",
-    yearsOwned: 31,
-    equityPercent: 92,
-    estimatedValue: 680000,
-    isAbsenteeOwner: true,
-    score: 100,
-    grade: "elite" as const,
-    flags: ["long_ownership_20yr", "high_equity_70pct", "absentee_owner"],
-    stage: "new",
-    aiFlag: true,
-  },
-  {
-    id: "2",
-    name: "Gloria Kim",
-    propertyAddress: "5502 Lakeview Terrace",
-    city: "Seattle",
-    county: "King",
-    state: "WA",
-    propertyType: "townhouse",
-    yearsOwned: 26,
-    equityPercent: 88,
-    estimatedValue: 820000,
-    isAbsenteeOwner: true,
-    score: 95,
-    grade: "elite" as const,
-    flags: ["long_ownership_20yr", "high_equity_70pct", "absentee_owner"],
-    stage: "new",
-    aiFlag: true,
-  },
-  {
-    id: "3",
-    name: "Robert Whitfield",
-    propertyAddress: "4821 Oak Creek Dr",
-    city: "Austin",
-    county: "Travis",
-    state: "TX",
-    propertyType: "single_family",
-    yearsOwned: 18,
-    equityPercent: 74,
-    estimatedValue: 545000,
-    isAbsenteeOwner: false,
-    score: 91,
-    grade: "elite" as const,
-    flags: ["long_ownership_10yr", "high_equity_70pct"],
-    stage: "contacted",
-    aiFlag: true,
-  },
-  {
-    id: "4",
-    name: "Patricia Novak",
-    propertyAddress: "7113 Willow Bend Ln",
-    city: "Houston",
-    county: "Harris",
-    state: "TX",
-    propertyType: "condo",
-    yearsOwned: 22,
-    equityPercent: 81,
-    estimatedValue: 310000,
-    isAbsenteeOwner: true,
-    score: 88,
-    grade: "elite" as const,
-    flags: ["long_ownership_20yr", "high_equity_70pct", "absentee_owner"],
-    stage: "contacted",
-    aiFlag: true,
-  },
-  {
-    id: "5",
-    name: "Marcus Delgado",
-    propertyAddress: "218 Ridgecrest Way",
-    city: "Phoenix",
-    county: "Maricopa",
-    state: "AZ",
-    propertyType: "single_family",
-    yearsOwned: 13,
-    equityPercent: 52,
-    estimatedValue: 390000,
-    isAbsenteeOwner: false,
-    score: 67,
-    grade: "refined" as const,
-    flags: ["long_ownership_10yr", "high_equity_40pct"],
-    stage: "new",
-    aiFlag: false,
-  },
-  {
-    id: "6",
-    name: "Thomas Reeves",
-    propertyAddress: "3340 Cypress Hollow Blvd",
-    city: "Fort Lauderdale",
-    county: "Broward",
-    state: "FL",
-    propertyType: "single_family",
-    yearsOwned: 9,
-    equityPercent: 44,
-    estimatedValue: 445000,
-    isAbsenteeOwner: false,
-    score: 48,
-    grade: "refined" as const,
-    flags: ["high_equity_40pct", "stale_transaction"],
-    stage: "contacted",
-    aiFlag: false,
-  },
-  {
-    id: "7",
-    name: "Calvin Marsh",
-    propertyAddress: "1204 Birchwood Dr",
-    city: "Houston",
-    county: "Harris",
-    state: "TX",
-    propertyType: "single_family",
-    yearsOwned: 7,
-    equityPercent: 31,
-    estimatedValue: 275000,
-    isAbsenteeOwner: false,
-    score: 28,
-    grade: "rock" as const,
-    flags: ["stale_transaction"],
-    stage: "new",
-    aiFlag: false,
-  },
-];
-
-type PropertyLead = typeof INITIAL_LEADS[0];
+interface PropertyLead {
+  id: string;
+  name: string;
+  propertyAddress: string;
+  city: string;
+  county: string;
+  state: string;
+  propertyType: string;
+  yearsOwned: number;
+  equityPercent: number;
+  estimatedValue: number;
+  isAbsenteeOwner: boolean;
+  score: number;
+  grade: "elite" | "refined" | "rock";
+  flags: string[];
+  stage: string;
+  aiFlag: boolean;
+  last_contact_at?: string;
+  heat_score?: number;
+}
 
 // ── DB lead shape from Supabase ────────────────────────────────────────────────
 interface DbLead {
@@ -250,11 +104,13 @@ interface DbLead {
   equity_percent?: number;
   is_absentee_owner?: boolean;
   opportunity_score?: number;
+  heat_score?: number;
   gem_grade?: string;
   signal_flags?: string[];
   stage?: string;
   estimated_value?: number;
   created_at?: string;
+  last_contact_at?: string;
 }
 
 function dbLeadToPropertyLead(l: DbLead): PropertyLead {
@@ -270,11 +126,13 @@ function dbLeadToPropertyLead(l: DbLead): PropertyLead {
     equityPercent:   Math.round(l.equity_percent ?? 0),
     estimatedValue:  l.estimated_value ?? 0,
     isAbsenteeOwner: l.is_absentee_owner ?? false,
-    score:           l.opportunity_score ?? 0,
+    score:           l.heat_score ?? l.opportunity_score ?? 0,
     grade:           (l.gem_grade as "elite" | "refined" | "rock") ?? "rock",
     flags:           l.signal_flags ?? [],
     stage:           l.stage ?? "new",
     aiFlag:          (l.gem_grade === "elite" || l.gem_grade === "refined"),
+    last_contact_at: l.last_contact_at,
+    heat_score:      l.heat_score,
   };
 }
 
@@ -300,17 +158,16 @@ const stageBarColor: Record<string, string> = {
 
 // ── Mock notifications ─────────────────────────────────────────────────────────
 
-const mockNotifications = [
-  {
-    id: "n1",
-    type: "mining_complete" as const,
-    title: "Mining complete — Travis County",
-    body: "Found 43 opportunity leads. 12 Elite Gems, 31 Refined.",
-    read: false,
-    created_at: "2026-03-03T14:30:00Z",
-    metadata: { elite_count: 12, refined_count: 31, lead_count: 43 },
-  },
-];
+type NotifType = "mining_complete";
+interface Notification {
+  id: string;
+  type: NotifType;
+  title: string;
+  body: string;
+  read: boolean;
+  created_at: string;
+  metadata: Record<string, number>;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1079,8 +936,10 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   const [miningPhase, setMiningPhase]   = useState<string>("");
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const jobIdRef  = useRef<string | null>(null);
-  const [notifications, setNotifications]         = useState(mockNotifications);
+  const [notifications, setNotifications]         = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [agentStatus, setAgentStatus]             = useState<{ name: string; status: string; target: string | null }[]>([]);
+  const [analyticsStats, setAnalyticsStats]       = useState<{ leadsMinedThisWeek: number; callsMade: number; smsSent: number; responses: number } | null>(null);
 
   // ── Real leads from Supabase ──────────────────────────────────────────────
   const [dbLeads, setDbLeads]     = useState<PropertyLead[]>([]);
@@ -1104,7 +963,49 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   };
 
   useEffect(() => {
-    if (isActive) fetchLeads();
+    if (!isActive) return;
+    fetchLeads();
+
+    // Fetch events as notifications
+    fetch("/api/events?limit=20")
+      .then((r) => r.json())
+      .then((d) => {
+        const events = Array.isArray(d) ? d : (d.events ?? []);
+        const mapped: Notification[] = events
+          .filter((e: { event_type?: string }) => e.event_type === "mining_complete")
+          .map((e: { id: string; event_type: string; title?: string; description?: string; metadata?: Record<string, number>; created_at?: string }) => ({
+            id:         e.id,
+            type:       "mining_complete" as NotifType,
+            title:      e.title ?? "Mining complete",
+            body:       e.description ?? "",
+            read:       false,
+            created_at: e.created_at ?? new Date().toISOString(),
+            metadata:   e.metadata ?? {},
+          }));
+        if (mapped.length > 0) setNotifications(mapped);
+      })
+      .catch(() => {});
+
+    // Fetch agent/automation status
+    fetch("/api/automation/status")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.agents)) setAgentStatus(d.agents);
+      })
+      .catch(() => {});
+
+    // Fetch weekly analytics
+    fetch("/api/analytics?days=7")
+      .then((r) => r.json())
+      .then((d) => {
+        setAnalyticsStats({
+          leadsMinedThisWeek: d.totalLeads ?? 0,
+          callsMade:          d.callsMade  ?? 0,
+          smsSent:            d.smsSent    ?? 0,
+          responses:          d.responses  ?? 0,
+        });
+      })
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive]);
 
@@ -1115,11 +1016,46 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   }, [miningStatus]);
 
   // ── Lead actions ──────────────────────────────────────────────────────────
-  const [leadStages, setLeadStages]           = useState<Record<string, string>>({});
+  const [leadStages, setLeadStages] = useState<Record<string, string>>({});
 
-  // Use real leads if available, fall back to mock
-  const ALL_LEADS = dbLeads.length > 0 ? dbLeads : INITIAL_LEADS;
-  const newLeadsCount = ALL_LEADS.filter(l => (leadStages[l.id] ?? l.stage) === "new").length;
+  const ALL_LEADS: PropertyLead[] = dbLeads;
+  const newLeadsCount = ALL_LEADS.filter((l: PropertyLead) => (leadStages[l.id] ?? l.stage) === "new").length;
+
+  // ── Computed real data (derived from ALL_LEADS) ───────────────────────────
+  const stageBreakdown = STAGE_LIST.map((s) => {
+    const label = s.charAt(0).toUpperCase() + s.slice(1);
+    const count = ALL_LEADS.filter((l: PropertyLead) => (leadStages[l.id] ?? l.stage) === s).length;
+    const pct   = ALL_LEADS.length > 0 ? Math.round((count / ALL_LEADS.length) * 100) : 0;
+    return { stage: label, count, pct };
+  });
+
+  const leadSources = [
+    { source: "County Assessor", count: ALL_LEADS.filter((l: PropertyLead) => l.grade === "elite" || l.grade === "refined" || l.grade === "rock").length },
+  ].filter((s) => s.count > 0);
+
+  const now = Date.now();
+  const followUpQueue = ALL_LEADS
+    .filter((l: PropertyLead) => {
+      if (!l.last_contact_at) return false;
+      const t = new Date(l.last_contact_at).getTime();
+      return t >= now - 7 * 24 * 60 * 60 * 1000 && t < now - 48 * 60 * 60 * 1000;
+    })
+    .filter((l: PropertyLead) => l.stage !== "qualified" && l.stage !== "booked")
+    .slice(0, 4)
+    .map((l: PropertyLead) => {
+      const hoursAgo = Math.floor((now - new Date(l.last_contact_at!).getTime()) / (1000 * 60 * 60));
+      const due = hoursAgo < 24 ? "Today" : hoursAgo < 48 ? "Tomorrow" : "This week";
+      const urgency = hoursAgo > 96 ? "high" : hoursAgo > 48 ? "medium" : "low";
+      return { name: l.name, action: l.isAbsenteeOwner ? "Follow-up — absentee owner" : "Follow-up call", due, urgency };
+    });
+
+  const aiScoreFeed = [...ALL_LEADS]
+    .sort((a: PropertyLead, b: PropertyLead) => b.score - a.score)
+    .slice(0, 3)
+    .map((l: PropertyLead) => {
+      const signals = l.flags.map((f) => FLAG_LABELS[f] ?? f).join(", ") || "Multiple signals";
+      return { name: l.name, score: l.score, delta: "", reason: signals };
+    });
   const [callingLead, setCallingLead]         = useState<PropertyLead | null>(null);
   const [callDuration, setCallDuration]       = useState(0);
   const [composeLead, setComposeLead]         = useState<{ lead: PropertyLead; type: "sms" | "email" } | null>(null);
@@ -2041,7 +1977,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
           <div>
             <SectionHeader gemVariant="green">AI Miner Status</SectionHeader>
             <div className="space-y-1.5">
-              {agentStatus.map((agent) => {
+              {agentStatus.length > 0 ? agentStatus.map((agent) => {
                 const gemKey = agent.status === "calling" || agent.status === "active" ? "green" : "yellow";
                 return (
                   <MiningPanel key={agent.name} padding="sm" status={gemKey}>
@@ -2054,18 +1990,20 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
                       </div>
                       <span
                         className="text-[10px] font-semibold px-2 py-0.5 rounded-lg capitalize"
-                        style={{ color: GEM[gemKey], background: GLOW[gemKey].bg }}
+                        style={{ color: GEM[gemKey as "green" | "yellow"], background: GLOW[gemKey as "green" | "yellow"].bg }}
                       >
                         {agent.status}
                       </span>
                     </div>
                   </MiningPanel>
                 );
-              })}
+              }) : (
+                <p className="text-[11px] text-neutral-600 px-1">No active agents</p>
+              )}
             </div>
           </div>
 
-          {/* Next Best Actions — clickable */}
+          {/* Next Best Actions — from real top leads */}
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Target className="w-3.5 h-3.5" style={{ color: GEM.yellow }} />
@@ -2075,35 +2013,32 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             </div>
             <MiningPanel carved>
               <div className="space-y-2">
-                {[
-                  { icon: Phone,         text: "Call Denise Wu — 100-pt elite, 31-yr absentee",       gem: "green"  as const, leadId: "1", action: "call"  },
-                  { icon: MessageSquare, text: "SMS Patricia Novak — absentee, no reply yet",          gem: "yellow" as const, leadId: "4", action: "sms"   },
-                  { icon: RefreshCw,     text: "Re-score leads with missing equity data",              gem: "yellow" as const, leadId: null, action: null   },
-                  { icon: Activity,      text: "Review 2 rock-grade leads for disqualification",       gem: "red"    as const, leadId: null, action: null   },
-                ].map((item, i) => {
-                  const Icon = item.icon;
-                  const handleClick = () => {
-                    if (!item.leadId) return;
-                    const lead = ALL_LEADS.find((l) => l.id === item.leadId);
-                    if (!lead) return;
-                    if (item.action === "call") setCallingLead(lead);
-                    if (item.action === "sms") setComposeLead({ lead, type: "sms" });
-                  };
-                  return (
-                    <button
-                      key={i}
-                      onClick={handleClick}
-                      className={cn(
-                        "w-full flex items-start gap-2.5 text-left rounded-xl p-2 -mx-2 transition-colors",
-                        item.leadId ? "hover:bg-white/[0.04] cursor-pointer" : "cursor-default"
-                      )}
-                    >
-                      <Icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: GEM[item.gem] }} />
-                      <p className="text-[11px] text-neutral-400 leading-relaxed">{item.text}</p>
-                      {item.leadId && <ChevronRight className="w-3 h-3 text-neutral-700 mt-0.5 flex-shrink-0" />}
-                    </button>
-                  );
-                })}
+                {ALL_LEADS.length === 0 ? (
+                  <p className="text-[11px] text-neutral-600">Mine leads to see recommended actions</p>
+                ) : (
+                  [...ALL_LEADS]
+                    .filter((l: PropertyLead) => !l.last_contact_at || new Date(l.last_contact_at).getTime() < now - 48 * 60 * 60 * 1000)
+                    .sort((a: PropertyLead, b: PropertyLead) => b.score - a.score)
+                    .slice(0, 3)
+                    .map((lead: PropertyLead) => {
+                      const Icon = lead.isAbsenteeOwner ? Phone : MessageSquare;
+                      const action = lead.isAbsenteeOwner ? "call" : "sms";
+                      const signals = lead.flags.map((f) => FLAG_LABELS[f] ?? f).slice(0, 2).join(", ");
+                      return (
+                        <button
+                          key={lead.id}
+                          onClick={() => action === "call" ? setCallingLead(lead) : setComposeLead({ lead, type: "sms" })}
+                          className="w-full flex items-start gap-2.5 text-left rounded-xl p-2 -mx-2 transition-colors hover:bg-white/[0.04] cursor-pointer"
+                        >
+                          <Icon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: lead.grade === "elite" ? GEM.green : GEM.yellow }} />
+                          <p className="text-[11px] text-neutral-400 leading-relaxed">
+                            {action === "call" ? "Call" : "SMS"} {lead.name} — {lead.score}pt, {signals}
+                          </p>
+                          <ChevronRight className="w-3 h-3 text-neutral-700 mt-0.5 flex-shrink-0" />
+                        </button>
+                      );
+                    })
+                )}
               </div>
             </MiningPanel>
           </div>
@@ -2114,12 +2049,12 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             <MiningPanel carved>
               <div className="space-y-3">
                 {[
-                  { label: "Leads Mined", value: 47,  max: 60  },
-                  { label: "Calls Made",  value: 31,  max: 50  },
-                  { label: "SMS Sent",    value: 88,  max: 100 },
-                  { label: "Responses",   value: 19,  max: 88  },
+                  { label: "Leads Mined", value: analyticsStats?.leadsMinedThisWeek ?? ALL_LEADS.length, max: Math.max(analyticsStats?.leadsMinedThisWeek ?? ALL_LEADS.length, 1) },
+                  { label: "Calls Made",  value: analyticsStats?.callsMade ?? 0,  max: Math.max(analyticsStats?.callsMade ?? 1, 1)  },
+                  { label: "SMS Sent",    value: analyticsStats?.smsSent ?? 0,    max: Math.max(analyticsStats?.smsSent ?? 1, 1)    },
+                  { label: "Responses",   value: analyticsStats?.responses ?? 0,  max: Math.max(analyticsStats?.smsSent ?? 1, 1)   },
                 ].map((item) => {
-                  const pct      = Math.round((item.value / item.max) * 100);
+                  const pct      = Math.min(Math.round((item.value / item.max) * 100), 100);
                   const barColor = PERF_COLOR(pct);
                   return (
                     <div key={item.label}>
@@ -2145,27 +2080,35 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             <SectionHeader>Conversion Funnel</SectionHeader>
             <MiningPanel carved>
               <div className="space-y-2">
-                {[
-                  { from: "Mined",     to: "Contacted", rate: "74%" },
-                  { from: "Contacted", to: "Qualified",  rate: "61%" },
-                  { from: "Qualified", to: "Booked",     rate: "73%" },
-                  { from: "Booked",    to: "Closed",     rate: "88%" },
-                ].map((step) => {
-                  const rateNum   = parseInt(step.rate);
-                  const rateColor = rateNum >= 70 ? GEM.green : GEM.yellow;
-                  return (
-                    <div key={step.from} className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] text-neutral-500">{step.from}</span>
-                        <ChevronRight className="w-2.5 h-2.5 text-neutral-700" />
-                        <span className="text-[11px] text-neutral-400">{step.to}</span>
-                      </div>
-                      <span className="text-[11px] font-semibold tabular-nums" style={{ color: rateColor }}>
-                        {step.rate}
-                      </span>
-                    </div>
+                {(() => {
+                  const counts = Object.fromEntries(
+                    STAGE_LIST.map((s) => [s, ALL_LEADS.filter((l: PropertyLead) => (leadStages[l.id] ?? l.stage) === s).length])
                   );
-                })}
+                  const total      = ALL_LEADS.length || 1;
+                  const contacted  = counts.contacted  + counts.qualified + counts.booked;
+                  const qualified  = counts.qualified  + counts.booked;
+                  const booked     = counts.booked;
+                  const steps = [
+                    { from: "Mined",     to: "Contacted", rate: total      > 0 ? Math.round((contacted / total)     * 100) : 0 },
+                    { from: "Contacted", to: "Qualified",  rate: contacted  > 0 ? Math.round((qualified / contacted) * 100) : 0 },
+                    { from: "Qualified", to: "Booked",     rate: qualified  > 0 ? Math.round((booked    / qualified) * 100) : 0 },
+                  ];
+                  return steps.map((step) => {
+                    const rateColor = step.rate >= 60 ? GEM.green : step.rate >= 30 ? GEM.yellow : GEM.red;
+                    return (
+                      <div key={step.from} className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-neutral-500">{step.from}</span>
+                          <ChevronRight className="w-2.5 h-2.5 text-neutral-700" />
+                          <span className="text-[11px] text-neutral-400">{step.to}</span>
+                        </div>
+                        <span className="text-[11px] font-semibold tabular-nums" style={{ color: rateColor }}>
+                          {ALL_LEADS.length === 0 ? "—" : `${step.rate}%`}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </MiningPanel>
           </div>
