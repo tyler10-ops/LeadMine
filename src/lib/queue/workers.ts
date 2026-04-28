@@ -165,7 +165,7 @@ export function createPropertyMiningWorker(): Worker<PropertyMiningJobData> {
 
         const { data, error } = await supabase
           .from("leads")
-          .insert(rows)
+          .upsert(rows, { onConflict: "external_property_id", ignoreDuplicates: true })
           .select("id");
 
         if (error) {
