@@ -130,7 +130,6 @@ export function createPropertyMiningWorker(): Worker<PropertyMiningJobData> {
         const rows  = batch.map((s) => ({
           client_id:             clientId,
           email:                 `property+${s.record.external_property_id ?? slugify(s.record.property_address)}@leadmine.local`,
-          business_name:         s.record.owner_name ?? null,
           phone:                 null,
           source:                "county_assessor",
           intent:                s.breakdown.opportunity_type,
