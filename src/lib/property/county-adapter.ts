@@ -257,20 +257,60 @@ export async function fetchCountyRecords(
   const records: RawPropertyRecord[] = [];
   const limit = options.limit ?? 500;
 
+  // ZIP-first path: if the caller passed zip codes directly, use them via Rentcast
+  const directZips = (options.zipFilter ?? []).length > 0
+    ? options.zipFilter!
+    : (searchArea.zip_codes ?? []);
+
+  if (directZips.length > 0) {
+    const apiKey = process.env.RENTCAST_API_KEY;
+    if (!apiKey) {
+      return {
+        records: [],
+        source: "rentcast",
+        county: "zip-based",
+        state: "",
+        fetchedAt: new Date().toISOString(),
+        recordCount: 0,
+        errors: ["RENTCAST_API_KEY is not set in environment — add it to .env.local on the Mac Mini worker and restart PM2"],
+      };
+    }
+    try {
+      const result = await fetchRentcastByZips(directZips, { maxRecords: limit });
+      return {
+        records: result.records,
+        source: "rentcast",
+        county: "zip-based",
+        state: searchArea.state ?? "",
+        fetchedAt: new Date().toISOString(),
+        recordCount: result.records.length,
+        errors: result.errors,
+      };
+    } catch (err) {
+      return {
+        records: [],
+        source: "rentcast",
+        county: "zip-based",
+        state: "",
+        fetchedAt: new Date().toISOString(),
+        recordCount: 0,
+        errors: [`Rentcast fetch failed: ${err instanceof Error ? err.message : String(err)}`],
+      };
+    }
+  }
+
+  // County fallback path (legacy — used when no ZIP codes are provided)
   const targetCounties = searchArea.counties.length > 0
     ? searchArea.counties
     : ["Unknown"];
 
-  const targetZips = options.zipFilter ?? searchArea.zip_codes;
-
   const useRentcast = !!process.env.RENTCAST_API_KEY;
-  // const useAttom = !!process.env.ATTOM_API_KEY; // Re-enable when upgrading to ATTOM paid plan
 
   for (const county of targetCounties) {
     // ── Rentcast path (primary data source) ───────────────────────────────
     if (useRentcast) {
       const countyKey  = `${county}_${searchArea.state ?? ""}`;
-      const countyZips = COUNTY_ZIP_SEEDS[countyKey] ?? (searchArea.zip_codes ?? []);
+      const countyZips = COUNTY_ZIP_SEEDS[countyKey] ?? [];
 
       if (countyZips.length === 0) {
         errors.push(
@@ -308,7 +348,7 @@ export async function fetchCountyRecords(
     }
 
     try {
-      const fetched = await fetchFromOpenDataPortal(source, targetZips, limit);
+      const fetched = await fetchFromOpenDataPortal(source, searchArea.zip_codes ?? [], limit);
       records.push(...fetched);
     } catch (err) {
       errors.push(`Failed to fetch ${county}: ${err instanceof Error ? err.message : String(err)}`);
