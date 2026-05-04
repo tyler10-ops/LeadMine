@@ -13,7 +13,7 @@
 
 import path from "path";
 import dotenv from "dotenv";
-dotenv.config({ path: path.resolve(__dirname, "../.env.local") });
+dotenv.config({ path: path.resolve(__dirname, "../.env.local"), override: true });
 import { createMiningWorker, createScrapeWorker, createPropertyMiningWorker, createFollowUpWorker } from "../src/lib/queue/workers";
 import { closeRedisConnection } from "../src/lib/queue/connection";
 

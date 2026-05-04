@@ -7,6 +7,7 @@ import { fetchCountyRecords } from "../property/county-adapter";
 import { scoreBatch } from "../property/scorer";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendMiningCompletionPush } from "../notifications/push";
+import { skipTraceBatch } from "../property/melissa-adapter";
 import type { MiningProgress } from "./queues";
 
 const QUEUE_PREFIX = "leadmine-";
@@ -163,16 +164,17 @@ export function createPropertyMiningWorker(): Worker<PropertyMiningJobData> {
           enrichment_data:       { reasons: s.breakdown.reasons },
         }));
 
-        const { data, error } = await supabase
+        console.log(`[property-mining] Inserting batch of ${rows.length} rows...`);
+        const { error } = await supabase
           .from("leads")
-          .insert(rows)
-          .select("id");
+          .insert(rows);
 
         if (error) {
-          console.error(`[property-mining] Batch save failed:`, error.message, error.details ?? "");
+          console.error(`[property-mining] Batch save failed:`, JSON.stringify(error));
           progress.errors.push(`Batch save failed: ${error.message}`);
         } else {
-          saved += data?.length ?? 0;
+          console.log(`[property-mining] Batch inserted OK`);
+          saved += rows.length;
         }
       }
 
@@ -181,6 +183,34 @@ export function createPropertyMiningWorker(): Worker<PropertyMiningJobData> {
       await job.updateProgress({ ...progress, phase: "complete" });
 
       console.log(`[property-mining] Job ${job.id} complete — ${saved} leads saved (${elite.length} elite, ${refined.length} refined)`);
+
+      // ── Skip tracing: enrich elite + refined leads with phone/email ───────
+      try {
+        const { data: savedLeads } = await supabase
+          .from("leads")
+          .select("id, owner_name, property_address, property_city, property_state, property_zip")
+          .eq("client_id", clientId)
+          .not("owner_name", "is", null)
+          .is("phone", null)
+          .order("created_at", { ascending: false })
+          .limit(100);
+
+        if (savedLeads && savedLeads.length > 0) {
+          console.log(`[property-mining] Skip tracing ${savedLeads.length} elite/refined leads...`);
+          const enriched = await skipTraceBatch(savedLeads);
+
+          for (const [leadId, result] of enriched) {
+            await supabase.from("leads").update({
+              phone: result.phone ?? null,
+              email: result.email ? result.email : undefined,
+            }).eq("id", leadId);
+          }
+          console.log(`[property-mining] Enriched ${enriched.size} leads with contact info`);
+        }
+      } catch (enrichErr) {
+        console.warn(`[property-mining] Skip trace failed (non-fatal):`, enrichErr);
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       // ── Post-completion: log activity + push notification ──────────────────
       try {

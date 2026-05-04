@@ -1,18 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServerSupabase();
-    const { data: { user } } = await supabase.auth.getUser();
+    const authClient = await createServerSupabase();
+    const { data: { user } } = await authClient.auth.getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    // Resolve all client IDs for this user (clients + realtors tables)
+    const supabase = createServiceClient();
+    const [{ data: clientRow }, { data: realtorRow }] = await Promise.all([
+      supabase.from("clients").select("id").eq("user_id", user.id).single(),
+      supabase.from("realtors").select("id").eq("user_id", user.id).single(),
+    ]);
+    const allowedIds = [clientRow?.id, realtorRow?.id, user.id].filter(Boolean) as string[];
+
     const { searchParams } = new URL(request.url);
-    const limit    = Math.min(parseInt(searchParams.get("limit") ?? "200"), 500);
-    const source   = searchParams.get("source") ?? "county_assessor";
-    const clientId = searchParams.get("clientId");
-    const grade    = searchParams.get("grade");
-    const stage    = searchParams.get("stage");
+    const limit  = Math.min(parseInt(searchParams.get("limit") ?? "200"), 500);
+    const source = searchParams.get("source") ?? "county_assessor";
+    const grade  = searchParams.get("grade");
+    const stage  = searchParams.get("stage");
 
     let query = supabase
       .from("leads")
@@ -34,13 +41,13 @@ export async function GET(request: NextRequest) {
         created_at
       `)
       .eq("data_source", source)
+      .in("client_id", allowedIds)
       .order("opportunity_score", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit);
 
-    if (clientId) query = query.eq("client_id", clientId);
-    if (grade)    query = query.eq("gem_grade", grade);
-    if (stage)    query = query.eq("stage", stage);
+    if (grade) query = query.eq("gem_grade", grade);
+    if (stage) query = query.eq("stage", stage);
 
     const { data, error } = await query;
 

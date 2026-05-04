@@ -13,8 +13,6 @@ import {
   ChevronRight,
   ChevronDown,
   ArrowUpRight,
-  RefreshCw,
-  Activity,
   Target,
   MapPin,
   Play,
@@ -488,23 +486,31 @@ function PropertyLeadCard({
 
   return (
     <div
-      className="rounded-2xl border transition-all"
+      className="rounded-2xl border transition-all overflow-hidden relative"
       style={{
         background:  CAVE.surface2,
         borderColor: isHighlighted
           ? GEM.yellow
           : lead.grade === "elite"
-          ? `${GEM.green}22`
+          ? `${GEM.green}28`
+          : lead.grade === "refined"
+          ? `${GEM.yellow}20`
           : CAVE.stoneEdge,
         boxShadow: isHighlighted
           ? `0 0 24px rgba(255,214,10,0.15)`
           : lead.grade === "elite"
-          ? `0 0 20px rgba(0,255,136,0.04)`
+          ? `0 0 20px rgba(0,255,136,0.06)`
           : "none",
       }}
     >
+      {/* Left grade accent bar */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[3px]"
+        style={{ background: gradeConfig.color, opacity: lead.grade === "rock" ? 0.2 : 0.7 }}
+      />
+
       {/* Header */}
-      <div className="flex items-start gap-3 p-3.5 pb-0">
+      <div className="flex items-start gap-3 pl-4 pr-3.5 pt-3.5 pb-0">
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center text-[13px] font-bold flex-shrink-0 mt-0.5"
           style={{ background: `${gradeConfig.color}15`, color: gradeConfig.color }}
@@ -533,35 +539,46 @@ function PropertyLeadCard({
             {lead.propertyAddress}, {lead.city}
           </p>
           {/* Score bar */}
-          <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: CAVE.stoneMid }}>
+          <div className="mt-2 h-[3px] rounded-full overflow-hidden" style={{ background: CAVE.stoneMid }}>
             <div
-              className="h-full rounded-full"
+              className="h-full rounded-full transition-all"
               style={{ width: `${lead.score}%`, background: scoreColor, boxShadow: `0 0 6px ${scoreColor}55` }}
             />
           </div>
         </div>
       </div>
 
-      {/* Property details */}
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 px-3.5 pt-2.5">
-        <span className="flex items-center gap-1 text-[10px] text-neutral-500">
+      {/* Property meta chips */}
+      <div className="flex items-center gap-1.5 flex-wrap pl-4 pr-3.5 pt-2.5">
+        <span
+          className="flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-medium"
+          style={{ background: CAVE.stoneDeep, color: "#707070", border: `1px solid ${CAVE.stoneMid}` }}
+        >
           <MapPin className="w-2.5 h-2.5" />
           {lead.county}, {lead.state}
         </span>
-        <span className="text-[10px] text-neutral-700">·</span>
-        <span className="text-[10px] text-neutral-500">
+        <span
+          className="text-[10px] px-2 py-0.5 rounded-md font-medium"
+          style={{ background: CAVE.stoneDeep, color: "#707070", border: `1px solid ${CAVE.stoneMid}` }}
+        >
           {PROPERTY_TYPE_LABELS[lead.propertyType] ?? lead.propertyType}
         </span>
-        <span className="text-[10px] text-neutral-700">·</span>
-        <span className="text-[10px] text-neutral-500">{lead.yearsOwned} yrs owned</span>
-        <span className="text-[10px] text-neutral-700">·</span>
-        <span className="text-[10px] font-semibold" style={{ color: GEM.yellow }}>
+        <span
+          className="text-[10px] px-2 py-0.5 rounded-md font-medium tabular-nums"
+          style={{ background: CAVE.stoneDeep, color: "#707070", border: `1px solid ${CAVE.stoneMid}` }}
+        >
+          {lead.yearsOwned} yrs owned
+        </span>
+        <span
+          className="text-[10px] px-2 py-0.5 rounded-md font-semibold tabular-nums"
+          style={{ background: `${GEM.yellow}10`, color: GEM.yellow, border: `1px solid ${GEM.yellow}22` }}
+        >
           {lead.equityPercent}% equity
         </span>
         {lead.isAbsenteeOwner && (
           <span
-            className="text-[9px] font-bold px-1.5 py-0.5 rounded"
-            style={{ color: GEM.green, background: `${GEM.green}12` }}
+            className="text-[10px] font-bold px-2 py-0.5 rounded-md"
+            style={{ color: GEM.green, background: `${GEM.green}12`, border: `1px solid ${GEM.green}22` }}
           >
             Absentee
           </span>
@@ -625,12 +642,12 @@ function PropertyLeadCard({
       )}
 
       {/* Signal flags + stage (clickable) */}
-      <div className="flex flex-wrap gap-1 px-3.5 pt-2 items-center">
+      <div className="flex flex-wrap gap-1 pl-4 pr-3.5 pt-2 items-center">
         {lead.flags.slice(0, 3).map((flag) => (
           <span
             key={flag}
-            className="text-[9px] px-1.5 py-0.5 rounded border"
-            style={{ color: "#6b6b6b", borderColor: CAVE.stoneMid }}
+            className="text-[9px] px-1.5 py-0.5 rounded-md border font-medium"
+            style={{ color: "#8a8a8a", borderColor: `${CAVE.stoneMid}`, background: CAVE.stoneDeep }}
           >
             {FLAG_LABELS[flag] ?? flag}
           </span>
@@ -675,49 +692,43 @@ function PropertyLeadCard({
 
       {/* Action bar */}
       <div
-        className="flex items-center gap-1 px-3 pb-3 pt-2.5 mt-1.5 border-t"
+        className="flex items-center gap-1.5 pl-4 pr-3 pb-3 pt-2.5 mt-1.5 border-t"
         style={{ borderColor: CAVE.stoneMid }}
       >
         <button
           onClick={onCall}
-          className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110"
-          style={{ background: `${GEM.green}12`, border: `1px solid ${GEM.green}25` }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:brightness-125"
+          style={{ background: `${GEM.green}12`, border: `1px solid ${GEM.green}25`, color: GEM.green }}
           title="Call"
         >
-          <Phone className="w-3.5 h-3.5" style={{ color: GEM.green }} />
+          <Phone className="w-3 h-3" />
+          Call
         </button>
         <button
           onClick={onSms}
-          className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110"
-          style={{ background: `${GEM.yellow}10`, border: `1px solid ${GEM.yellow}25` }}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:brightness-125"
+          style={{ background: `${GEM.yellow}10`, border: `1px solid ${GEM.yellow}25`, color: GEM.yellow }}
           title="SMS"
         >
-          <MessageSquare className="w-3.5 h-3.5" style={{ color: GEM.yellow }} />
+          <MessageSquare className="w-3 h-3" />
+          SMS
         </button>
         <button
           onClick={onEmail}
-          className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors hover:bg-white/[0.06]"
+          className="w-[30px] h-[30px] rounded-xl flex items-center justify-center transition-colors hover:bg-white/[0.06]"
           style={{ border: `1px solid ${CAVE.stoneMid}` }}
           title="Email"
         >
-          <Mail className="w-3.5 h-3.5 text-neutral-500" />
+          <Mail className="w-3 h-3 text-neutral-500" />
         </button>
         <div className="flex-1" />
         <button
           onClick={onSendToAutomation}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-semibold transition-all hover:brightness-110"
           style={{ background: `${GEM.green}14`, border: `1px solid ${GEM.green}28`, color: GEM.green }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.background = `${GEM.green}22`;
-            (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px rgba(0,255,136,0.18)`;
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.background = `${GEM.green}14`;
-            (e.currentTarget as HTMLElement).style.boxShadow = "none";
-          }}
         >
           <Zap className="w-3 h-3" />
-          Send to Automation
+          Automate
         </button>
       </div>
     </div>
@@ -727,149 +738,310 @@ function PropertyLeadCard({
 // ── Full-Screen Mining Display ─────────────────────────────────────────────────
 
 const MINING_PHASES = [
-  { key: "scraping",  label: "Fetching property records",  icon: "⛏" },
-  { key: "enriching", label: "Scoring properties",          icon: "📊" },
-  { key: "grading",   label: "Grading gems",                icon: "💎" },
-  { key: "saving",    label: "Saving leads",                icon: "💾" },
-  { key: "complete",  label: "Complete",                    icon: "✓"  },
+  { key: "scraping",  label: "Fetching county records"  },
+  { key: "enriching", label: "Scoring properties"       },
+  { key: "grading",   label: "Grading gems"             },
+  { key: "saving",    label: "Saving leads"             },
 ];
 
 function MiningFullscreen({
   status,
   phase,
   zipCodes,
+  progress,
+  result,
   onDismiss,
 }: {
   status: "running" | "complete";
   phase: string;
   zipCodes: string[];
+  progress: { recordsFound: number; recordsSaved: number; recordsEnriched: number };
+  result: { elite: number; refined: number; rock: number; total: number } | null;
   onDismiss: () => void;
 }) {
+  const [displayCount, setDisplayCount] = useState(0);
   const [tick, setTick] = useState(0);
 
+  // Smooth counter animation toward actual value
+  useEffect(() => {
+    if (progress.recordsFound <= displayCount) return;
+    const diff = progress.recordsFound - displayCount;
+    const step = Math.max(1, Math.floor(diff / 8));
+    const t = setTimeout(() => setDisplayCount((c) => Math.min(c + step, progress.recordsFound)), 80);
+    return () => clearTimeout(t);
+  }, [progress.recordsFound, displayCount]);
+
+  // Reset counter when a new mine starts
+  useEffect(() => {
+    if (status === "running") setDisplayCount(0);
+  }, [status]);
+
+  // Tick for animated dots in phase timeline
   useEffect(() => {
     if (status !== "running") return;
-    const t = setInterval(() => setTick((n) => n + 1), 800);
+    const t = setInterval(() => setTick((n) => n + 1), 220);
     return () => clearInterval(t);
   }, [status]);
 
-  const currentPhaseKey = MINING_PHASES.findIndex((p) =>
-    phase.toLowerCase().includes(p.key)
-  );
-  const phaseIndex = currentPhaseKey >= 0 ? currentPhaseKey : 0;
-  const dots = ".".repeat((tick % 3) + 1);
+  const phaseIndex = (() => {
+    const i = MINING_PHASES.findIndex((p) => phase.toLowerCase().includes(p.key));
+    return i >= 0 ? i : 0;
+  })();
 
   return (
     <div
       className="flex-1 flex flex-col items-center justify-center relative overflow-hidden"
       style={{ background: CAVE.deep }}
     >
-      {/* Subtle animated grid */}
+      <style>{`
+        @keyframes lm-radar {
+          0%   { transform: translate(-50%,-50%) scale(0.25); opacity: 0.7; }
+          100% { transform: translate(-50%,-50%) scale(2.8);  opacity: 0;   }
+        }
+        @keyframes lm-sweep {
+          from { transform: translate(-50%,-50%) rotate(0deg);   }
+          to   { transform: translate(-50%,-50%) rotate(360deg); }
+        }
+        @keyframes lm-glow-pulse {
+          0%, 100% { opacity: 0.5; }
+          50%       { opacity: 1;   }
+        }
+      `}</style>
+
+      {/* Background grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(${GEM.green}08 1px, transparent 1px), linear-gradient(90deg, ${GEM.green}08 1px, transparent 1px)`,
-          backgroundSize: "40px 40px",
-          maskImage: "radial-gradient(ellipse 70% 70% at 50% 50%, black 40%, transparent 100%)",
+          backgroundImage: `linear-gradient(${GEM.green}06 1px, transparent 1px), linear-gradient(90deg, ${GEM.green}06 1px, transparent 1px)`,
+          backgroundSize: "52px 52px",
+          maskImage: "radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 100%)",
         }}
       />
 
-      {/* Glow core */}
+      {/* Radar rings */}
+      {status === "running" && [0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="absolute rounded-full pointer-events-none"
+          style={{
+            width: 300, height: 300,
+            top: "50%", left: "50%",
+            border: `1px solid ${GEM.green}`,
+            animation: `lm-radar 2.8s ${i * 0.93}s ease-out infinite`,
+          }}
+        />
+      ))}
+
+      {/* Sweep line */}
+      {status === "running" && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            width: 150, height: 1,
+            top: "50%", left: "50%",
+            background: `linear-gradient(to right, transparent, ${GEM.green}55)`,
+            transformOrigin: "left center",
+            animation: "lm-sweep 3s linear infinite",
+          }}
+        />
+      )}
+
+      {/* Ambient glow */}
       <div
-        className="absolute w-96 h-96 rounded-full pointer-events-none"
+        className="absolute pointer-events-none rounded-full"
         style={{
-          background: status === "complete"
-            ? `radial-gradient(circle, ${GEM.green}18 0%, transparent 70%)`
-            : `radial-gradient(circle, ${GEM.green}${status === "running" ? "12" : "08"} 0%, transparent 70%)`,
+          width: 520, height: 520,
           top: "50%", left: "50%",
-          transform: "translate(-50%, -50%)",
-          transition: "background 1s ease",
+          transform: "translate(-50%,-50%)",
+          background: status === "complete"
+            ? `radial-gradient(circle, ${GEM.green}25 0%, transparent 65%)`
+            : `radial-gradient(circle, ${GEM.green}0C 0%, transparent 65%)`,
+          animation: status === "running" ? "lm-glow-pulse 2.2s ease-in-out infinite" : undefined,
+          transition: "background 1.2s ease",
         }}
       />
 
-      <div className="relative z-10 flex flex-col items-center gap-8 px-8 max-w-lg w-full">
+      <div className="relative z-10 flex flex-col items-center gap-5 px-8 max-w-md w-full">
 
         {/* Icon */}
         <div
-          className="w-20 h-20 rounded-2xl flex items-center justify-center text-4xl"
+          className="w-[72px] h-[72px] rounded-2xl flex items-center justify-center text-[30px]"
           style={{
-            background: `${GEM.green}12`,
-            border: `1px solid ${GEM.green}${status === "complete" ? "60" : "28"}`,
-            boxShadow: status === "complete" ? `0 0 40px ${GEM.green}25` : "none",
+            background: status === "complete" ? `${GEM.green}20` : `${GEM.green}0E`,
+            border: `1px solid ${GEM.green}${status === "complete" ? "55" : "28"}`,
+            boxShadow: status === "complete" ? `0 0 48px ${GEM.green}30` : `0 0 20px ${GEM.green}10`,
           }}
         >
           {status === "complete" ? "💎" : "⛏"}
         </div>
 
         {/* Title */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-1.5">
           <h2 className="text-[22px] font-bold text-white tracking-tight">
-            {status === "complete" ? "Mine Complete" : `Mining${dots}`}
+            {status === "complete" ? "Mine Complete" : "Mining Properties"}
           </h2>
-          <p className="text-[13px] text-neutral-500">
+          <p className="text-[12px] text-neutral-500">
             {status === "complete"
-              ? "New leads have been added to your pipeline"
-              : phase || "Starting up..."}
+              ? "New leads added to your pipeline"
+              : phase || "Connecting to county records..."}
           </p>
         </div>
 
-        {/* ZIP badges */}
-        <div className="flex flex-wrap justify-center gap-2">
+        {/* Live counter */}
+        {status === "running" && (
+          <div className="text-center">
+            <div
+              className="text-[52px] font-black tabular-nums leading-none"
+              style={{ color: GEM.green, textShadow: `0 0 32px ${GEM.green}55` }}
+            >
+              {displayCount.toLocaleString()}
+            </div>
+            <p className="text-[10px] text-neutral-600 mt-1 tracking-widest uppercase">records found</p>
+          </div>
+        )}
+
+        {/* Stats row */}
+        {status === "running" && (
+          <div className="grid grid-cols-3 gap-2 w-full">
+            {[
+              { label: "Scanned", value: displayCount },
+              { label: "Scored",  value: progress.recordsEnriched },
+              { label: "Saved",   value: progress.recordsSaved    },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="flex flex-col items-center py-3 rounded-xl"
+                style={{ background: `${GEM.green}08`, border: `1px solid ${GEM.green}18` }}
+              >
+                <span className="text-[17px] font-bold text-white tabular-nums">{s.value.toLocaleString()}</span>
+                <span className="text-[10px] text-neutral-600 mt-0.5">{s.label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ZIP chips */}
+        <div className="flex flex-wrap justify-center gap-1.5">
           {zipCodes.map((z) => (
             <span
               key={z}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold"
-              style={{ background: `${GEM.green}10`, border: `1px solid ${GEM.green}25`, color: GEM.green }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold"
+              style={{ background: `${GEM.green}0E`, border: `1px solid ${GEM.green}22`, color: GEM.green }}
             >
-              <MapPin className="w-3 h-3" />
+              <MapPin className="w-2.5 h-2.5" />
               {z}
             </span>
           ))}
         </div>
 
-        {/* Phase progress */}
-        <div className="w-full space-y-2">
-          {MINING_PHASES.filter((p) => p.key !== "complete").map((p, i) => {
-            const done    = i < phaseIndex || status === "complete";
-            const active  = i === phaseIndex && status === "running";
-            return (
-              <div
-                key={p.key}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
-                style={{
-                  background: done ? `${GEM.green}10` : active ? `${GEM.green}08` : CAVE.surface2,
-                  border: `1px solid ${done || active ? GEM.green + "25" : CAVE.stoneMid}`,
-                }}
-              >
-                <span className="text-[14px] w-5 text-center">
-                  {done ? "✓" : active ? p.icon : "○"}
-                </span>
-                <span
-                  className="text-[12px] font-medium flex-1"
-                  style={{ color: done ? GEM.green : active ? "#e5e5e5" : "#404040" }}
-                >
-                  {p.label}
-                </span>
-                {active && (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" style={{ color: GEM.green }} />
-                )}
-                {done && (
-                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" style={{ color: GEM.green }} />
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {/* Phase timeline */}
+        {status === "running" && (
+          <div className="w-full relative">
+            {/* Vertical track */}
+            <div
+              className="absolute pointer-events-none"
+              style={{ left: 11, top: 11, bottom: 11, width: 1, background: CAVE.stoneMid }}
+            />
+            {/* Progress fill */}
+            <div
+              className="absolute pointer-events-none transition-all duration-700"
+              style={{
+                left: 11, top: 11, width: 1,
+                height: `${(phaseIndex / (MINING_PHASES.length - 1)) * 100}%`,
+                background: GEM.green,
+                boxShadow: `0 0 6px ${GEM.green}60`,
+              }}
+            />
+            <div className="space-y-0">
+              {MINING_PHASES.map((p, i) => {
+                const done   = i < phaseIndex;
+                const active = i === phaseIndex;
+                return (
+                  <div key={p.key} className="flex items-center gap-3 py-2">
+                    <div
+                      className="w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0 z-10 text-[10px] font-bold"
+                      style={{
+                        background:  done ? GEM.green : active ? `${GEM.green}20` : CAVE.stoneDeep,
+                        border:      `1.5px solid ${done || active ? GEM.green : CAVE.stoneMid}`,
+                        boxShadow:   active ? `0 0 10px ${GEM.green}40` : undefined,
+                        color:       done ? "#000" : GEM.green,
+                      }}
+                    >
+                      {done
+                        ? "✓"
+                        : active
+                        ? <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        : ""}
+                    </div>
+                    <span
+                      className="text-[12px] font-medium flex-1 transition-colors"
+                      style={{ color: done ? GEM.green : active ? "#e5e5e5" : "#3a3a3a" }}
+                    >
+                      {p.label}
+                    </span>
+                    {active && (
+                      <div className="flex gap-0.5">
+                        {[0, 1, 2].map((d) => (
+                          <div
+                            key={d}
+                            className="w-1 h-1 rounded-full transition-opacity duration-200"
+                            style={{ background: GEM.green, opacity: (tick + d) % 3 === 0 ? 1 : 0.15 }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-        {/* Action */}
+        {/* Completion card */}
+        {status === "complete" && result && (
+          <div
+            className="w-full rounded-2xl p-5 space-y-4"
+            style={{ background: `${GEM.green}08`, border: `1px solid ${GEM.green}25` }}
+          >
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div>
+                <div className="text-[28px] font-black" style={{ color: GEM.green, textShadow: `0 0 18px ${GEM.green}50` }}>
+                  {result.elite}
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">Elite Gems</div>
+              </div>
+              <div>
+                <div className="text-[28px] font-black" style={{ color: GEM.yellow }}>
+                  {result.refined}
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">Refined</div>
+              </div>
+              <div>
+                <div className="text-[28px] font-black text-neutral-400">
+                  {result.rock}
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-0.5">Rock</div>
+              </div>
+            </div>
+            {result.total > 0 && (
+              <div className="h-2 rounded-full overflow-hidden flex gap-0.5">
+                {result.elite > 0 && <div className="h-full" style={{ width: `${(result.elite / result.total) * 100}%`, background: GEM.green }} />}
+                {result.refined > 0 && <div className="h-full" style={{ width: `${(result.refined / result.total) * 100}%`, background: GEM.yellow }} />}
+                {result.rock > 0 && <div className="h-full" style={{ width: `${(result.rock / result.total) * 100}%`, background: `${GEM.red}70` }} />}
+              </div>
+            )}
+            <p className="text-center text-[13px] font-semibold text-neutral-300">
+              {result.total} total leads added to pipeline
+            </p>
+          </div>
+        )}
+
+        {/* CTA */}
         {status === "complete" ? (
           <button
             onClick={onDismiss}
-            className="px-8 py-3 rounded-xl text-[13px] font-bold text-black transition-all"
-            style={{
-              background: GEM.green,
-              boxShadow: `0 0 24px ${GEM.green}35`,
-            }}
+            className="px-8 py-3 rounded-xl text-[13px] font-bold text-black transition-all hover:brightness-110"
+            style={{ background: GEM.green, boxShadow: `0 0 28px ${GEM.green}40` }}
           >
             View New Leads →
           </button>
@@ -934,6 +1106,8 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
       .catch(() => {});
   }, [miningStatus]);
   const [miningPhase, setMiningPhase]   = useState<string>("");
+  const [miningProgress, setMiningProgress] = useState<{ recordsFound: number; recordsSaved: number; recordsEnriched: number }>({ recordsFound: 0, recordsSaved: 0, recordsEnriched: 0 });
+  const [miningResult, setMiningResult] = useState<{ elite: number; refined: number; rock: number; total: number } | null>(null);
   const pollRef   = useRef<ReturnType<typeof setInterval> | null>(null);
   const jobIdRef  = useRef<string | null>(null);
   const [notifications, setNotifications]         = useState<Notification[]>([]);
@@ -1142,6 +1316,8 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
     if (selectedZips.length === 0) return;
     setMiningStatus("running");
     setMiningPhase("Starting mine...");
+    setMiningProgress({ recordsFound: 0, recordsSaved: 0, recordsEnriched: 0 });
+    setMiningResult(null);
     onMiningChange?.(true);
 
     let jobId: string;
@@ -1194,15 +1370,26 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
         const phase: string = data.progress?.phase ?? "";
         if (phase && PHASE_LABELS[phase]) setMiningPhase(PHASE_LABELS[phase]);
 
+        // Capture live progress counters
+        if (data.progress) {
+          setMiningProgress({
+            recordsFound:    data.progress.recordsFound    ?? 0,
+            recordsSaved:    data.progress.recordsSaved    ?? 0,
+            recordsEnriched: data.progress.recordsEnriched ?? 0,
+          });
+        }
+
         if (data.state === "completed") {
           stopPolling();
           setMiningStatus("complete");
           setMiningPhase("Complete");
           onMiningChange?.(false);
           const result = data.result ?? {};
-          const total   = result.totalSaved  ?? 0;
+          const total   = result.totalSaved       ?? 0;
           const elite   = result.byGrade?.elite   ?? 0;
           const refined = result.byGrade?.refined ?? 0;
+          const rock    = result.byGrade?.rock    ?? 0;
+          setMiningResult({ elite, refined, rock, total });
           setNotifications((prev) => [
             {
               id: `n${Date.now()}`,
@@ -1523,11 +1710,19 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
               </div>
 
               {/* Sliders */}
-              <div className="space-y-2 pt-1">
+              <div
+                className="rounded-xl p-3 space-y-3"
+                style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneMid}` }}
+              >
                 <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[10px] text-neutral-600">Min Equity</span>
-                    <span className="text-[10px] font-semibold" style={{ color: GEM.yellow }}>{minEquity}%</span>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[10px] text-neutral-500">Min Equity</span>
+                    <span
+                      className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                      style={{ color: GEM.yellow, background: `${GEM.yellow}12` }}
+                    >
+                      {minEquity}%
+                    </span>
                   </div>
                   <input
                     type="range" min={0} max={80} step={10}
@@ -1536,14 +1731,23 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
                     className="w-full h-1 rounded-full appearance-none cursor-pointer"
                     style={{
                       accentColor: GEM.yellow,
-                      background:  `linear-gradient(to right, ${GEM.yellow} ${(minEquity / 80) * 100}%, rgba(255,255,255,0.12) ${(minEquity / 80) * 100}%)`,
+                      background:  `linear-gradient(to right, ${GEM.yellow} ${(minEquity / 80) * 100}%, rgba(255,255,255,0.10) ${(minEquity / 80) * 100}%)`,
                     }}
                   />
                 </div>
+                <div
+                  className="h-px"
+                  style={{ background: CAVE.stoneMid }}
+                />
                 <div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-[10px] text-neutral-600">Min Years Owned</span>
-                    <span className="text-[10px] font-semibold" style={{ color: GEM.yellow }}>{minYearsOwned}yr</span>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-[10px] text-neutral-500">Min Years Owned</span>
+                    <span
+                      className="text-[10px] font-bold tabular-nums px-1.5 py-0.5 rounded"
+                      style={{ color: GEM.yellow, background: `${GEM.yellow}12` }}
+                    >
+                      {minYearsOwned}yr
+                    </span>
                   </div>
                   <input
                     type="range" min={0} max={30} step={5}
@@ -1552,7 +1756,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
                     className="w-full h-1 rounded-full appearance-none cursor-pointer"
                     style={{
                       accentColor: GEM.yellow,
-                      background:  `linear-gradient(to right, ${GEM.yellow} ${(minYearsOwned / 30) * 100}%, rgba(255,255,255,0.12) ${(minYearsOwned / 30) * 100}%)`,
+                      background:  `linear-gradient(to right, ${GEM.yellow} ${(minYearsOwned / 30) * 100}%, rgba(255,255,255,0.10) ${(minYearsOwned / 30) * 100}%)`,
                     }}
                   />
                 </div>
@@ -1576,37 +1780,37 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
 
               {/* Mine button */}
               {miningStatus === "running" ? (
-                <div className="flex items-center gap-2">
+                <div className="space-y-2">
                   <div
-                    className="flex-1 rounded-xl px-4 py-2.5 flex items-center justify-center gap-2 text-[12px] font-semibold"
-                    style={{ background: `${GEM.green}12`, border: `1px solid ${GEM.green}30`, color: GEM.green }}
+                    className="rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-[12px] font-semibold"
+                    style={{ background: `${GEM.green}0E`, border: `1px solid ${GEM.green}25`, color: GEM.green }}
                   >
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    {miningPhase}
+                    <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                    <span className="truncate">{miningPhase || "Mining..."}</span>
                   </div>
                   <button
                     onClick={handleStopMine}
-                    className="rounded-xl px-3 py-2.5 text-[11px] font-semibold transition-all flex items-center gap-1.5 flex-shrink-0"
-                    style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.25)", color: "#ef4444" }}
+                    className="w-full rounded-xl py-2 text-[11px] font-semibold transition-all flex items-center justify-center gap-1.5"
+                    style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }}
                   >
                     <X className="w-3 h-3" />
-                    Stop
+                    Stop Mine
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={handleStartMine}
                   disabled={selectedZips.length === 0}
-                  className="w-full rounded-xl px-4 py-2.5 flex items-center justify-center gap-2 text-[12px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full rounded-xl px-4 py-3 flex items-center justify-center gap-2 text-[13px] font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                   style={{
                     background: selectedZips.length > 0 ? GEM.green : CAVE.surface2,
                     color:      selectedZips.length > 0 ? "#000" : "#525252",
-                    boxShadow:  selectedZips.length > 0 ? `0 0 16px rgba(0,255,136,0.25)` : "none",
+                    boxShadow:  selectedZips.length > 0 ? `0 0 20px rgba(0,255,136,0.28)` : "none",
                   }}
                 >
                   <Play className="w-3.5 h-3.5" />
                   {selectedZips.length === 0
-                    ? "Enter a ZIP code to mine"
+                    ? "Enter a ZIP to mine"
                     : `Mine ${selectedZips.length} ZIP${selectedZips.length === 1 ? "" : "s"}`}
                 </button>
               )}
@@ -1757,7 +1961,9 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             status={miningStatus}
             phase={miningPhase}
             zipCodes={selectedZips}
-            onDismiss={() => { setMiningStatus("idle"); setMiningPhase(""); }}
+            progress={miningProgress}
+            result={miningResult}
+            onDismiss={() => { setMiningStatus("idle"); setMiningPhase(""); setMiningProgress({ recordsFound: 0, recordsSaved: 0, recordsEnriched: 0 }); setMiningResult(null); }}
           />
         )}
 
@@ -1826,22 +2032,25 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
             )}
           </div>
 
-          {/* Grade summary */}
-          <div className="flex items-center gap-3">
+          {/* Grade summary — clickable filters */}
+          <div className="flex items-center gap-2">
             {(["elite", "refined", "rock"] as const).map((grade) => {
-              const count  = filteredLeads.filter((l) => l.grade === grade).length;
+              const count  = ALL_LEADS.filter((l) => l.grade === grade).length;
               const config = GRADE_CONFIG[grade];
               return (
-                <div key={grade} className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-sm rotate-45" style={{ background: config.color }} />
-                  <span className="text-[11px] text-neutral-500">
-                    <span className="font-semibold" style={{ color: config.color }}>{count}</span> {config.label}
-                  </span>
+                <div
+                  key={grade}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
+                  style={{ background: `${config.color}0A`, border: `1px solid ${config.color}20` }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-sm rotate-45 flex-shrink-0" style={{ background: config.color }} />
+                  <span className="text-[11px] font-semibold tabular-nums" style={{ color: config.color }}>{count}</span>
+                  <span className="text-[11px] text-neutral-600">{config.label}</span>
                 </div>
               );
             })}
-            <span className="text-[10px] text-neutral-700 ml-auto">
-              {filteredLeads.length} of {ALL_LEADS.length} leads{leadsLoading && " · loading..."}
+            <span className="text-[10px] text-neutral-700 ml-auto tabular-nums">
+              {filteredLeads.length} shown{leadsLoading && " · loading..."}
             </span>
           </div>
 

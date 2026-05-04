@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceClient } from "@/lib/supabase/server";
 
 const client = new Anthropic();
 
@@ -112,22 +112,19 @@ Every interaction: act as if this realtor's next deal depends entirely on what y
 
 async function fetchLeadsForContext(userId: string): Promise<MinedLead[]> {
   try {
-    const supabase = await createServerSupabase();
+    const supabase = createServiceClient();
 
-    // Get client id for this user
-    const { data: clientRow } = await supabase
-      .from("clients")
-      .select("id")
-      .eq("user_id", userId)
-      .single();
+    const [{ data: clientRow }, { data: realtorRow }] = await Promise.all([
+      supabase.from("clients").select("id").eq("user_id", userId).single(),
+      supabase.from("realtors").select("id").eq("user_id", userId).single(),
+    ]);
 
-    if (!clientRow?.id) return [];
+    const allowedIds = [clientRow?.id, realtorRow?.id, userId].filter(Boolean) as string[];
 
-    // Fetch recent high-value leads
     const { data: leads } = await supabase
       .from("leads")
       .select("owner_name, property_address, property_city, property_state, property_zip, gem_grade, score, years_owned, is_absentee_owner, opportunity_type, signal_flags, enrichment_data, created_at")
-      .eq("client_id", clientRow.id)
+      .in("client_id", allowedIds)
       .in("gem_grade", ["elite", "refined"])
       .order("score", { ascending: false })
       .limit(50);

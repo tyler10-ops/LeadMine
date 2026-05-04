@@ -88,17 +88,13 @@ export async function runPropertyMiningPipeline(
 
     const { data, error } = await supabase
       .from("leads")
-      .upsert(rows, {
-        onConflict: "external_property_id",
-        ignoreDuplicates: true,
-      })
+      .insert(rows)
       .select("id");
 
     if (error) {
       errors.push(`Save batch failed: ${error.message}`);
     } else {
       saved += data?.length ?? 0;
-      duplicates += batch.length - (data?.length ?? 0);
     }
   }
 
