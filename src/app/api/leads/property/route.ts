@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
         gem_grade,
         signal_flags,
         stage,
+        phone,
+        email,
         created_at
       `)
       .eq("data_source", source)

@@ -85,6 +85,8 @@ interface PropertyLead {
   flags: string[];
   stage: string;
   aiFlag: boolean;
+  phone?: string | null;
+  email?: string | null;
   last_contact_at?: string;
   heat_score?: number;
 }
@@ -107,6 +109,8 @@ interface DbLead {
   signal_flags?: string[];
   stage?: string;
   estimated_value?: number;
+  phone?: string | null;
+  email?: string | null;
   created_at?: string;
   last_contact_at?: string;
 }
@@ -129,6 +133,8 @@ function dbLeadToPropertyLead(l: DbLead): PropertyLead {
     flags:           l.signal_flags ?? [],
     stage:           l.stage ?? "new",
     aiFlag:          (l.gem_grade === "elite" || l.gem_grade === "refined"),
+    phone:           l.phone ?? null,
+    email:           l.email ?? null,
     last_contact_at: l.last_contact_at,
     heat_score:      l.heat_score,
   };
@@ -333,6 +339,8 @@ function ComposePanel({
   const [subject, setSubject]   = useState(`Your property at ${lead.propertyAddress}`);
   const [body, setBody]         = useState("");
   const [sent, setSent]         = useState(false);
+  const [sending, setSending]   = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
 
   const templates = type === "sms"
     ? [
@@ -345,7 +353,34 @@ function ComposePanel({
         `Hi ${lead.name},\n\nI have qualified buyers actively searching in your area. Properties like yours at ${lead.propertyAddress} are in high demand right now.\n\nWould you like a free, no-obligation market analysis?\n\nBest,`,
       ];
 
-  const handleSend = () => {
+  const handleSend = async () => {
+    setSendError(null);
+
+    if (type === "sms") {
+      if (!lead.phone) {
+        setSendError("No phone number on file for this lead.");
+        return;
+      }
+      setSending(true);
+      try {
+        const res = await fetch("/api/outreach/sms", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ to: lead.phone, message: body, leadId: lead.id }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setSendError(data.error ?? "Send failed");
+          return;
+        }
+      } catch {
+        setSendError("Network error — try again");
+        return;
+      } finally {
+        setSending(false);
+      }
+    }
+
     setSent(true);
     setTimeout(onClose, 1800);
   };
@@ -430,6 +465,10 @@ function ComposePanel({
           </div>
 
           {/* Send button */}
+          {sendError && (
+            <p className="text-[11px] text-center" style={{ color: GEM.red }}>{sendError}</p>
+          )}
+
           {sent ? (
             <div className="flex items-center justify-center gap-2 py-2">
               <CheckCircle2 className="w-4 h-4" style={{ color: GEM.green }} />
@@ -440,15 +479,15 @@ function ComposePanel({
           ) : (
             <button
               onClick={handleSend}
-              disabled={!body.trim()}
+              disabled={!body.trim() || sending}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[12px] font-bold transition-all disabled:opacity-40"
               style={{
                 background: type === "sms" ? GEM.yellow : "rgba(255,255,255,0.1)",
                 color:      type === "sms" ? "#000" : "#e5e5e5",
               }}
             >
-              <Send className="w-3.5 h-3.5" />
-              Send {type === "sms" ? "SMS" : "Email"}
+              {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {sending ? "Sending..." : `Send ${type === "sms" ? "SMS" : "Email"}`}
             </button>
           )}
         </div>
