@@ -9,6 +9,7 @@ import { IntelligenceAgentPanel } from "@/components/hub/panels/intelligence-age
 import { LeadsPanel } from "@/components/hub/panels/leads-panel";
 import { CavePanel } from "@/components/hub/panels/cave-panel";
 import { AutomationsPanel } from "@/components/hub/panels/automations-panel";
+import { PortfolioPanel } from "@/components/hub/panels/portfolio-panel";
 import { canAccess } from "@/lib/plan-limits";
 import type { Plan } from "@/lib/plan-limits";
 import { TutorialOverlay } from "@/components/hub/tutorial-overlay";
@@ -20,6 +21,7 @@ import {
   Pickaxe,
   Users,
   Workflow,
+  Home,
   ChevronLeft,
   ChevronRight,
   PanelLeftClose,
@@ -43,6 +45,7 @@ const PANELS = [
   { id: "command-center", label: "Command Center", icon: LayoutGrid, shortLabel: "CMD"   },
   { id: "lead-machine",   label: "Lead Machine",   icon: Zap,        shortLabel: "MINE"  },
   { id: "leads",          label: "Leads",          icon: Users,      shortLabel: "LEADS" },
+  { id: "portfolio",      label: "Portfolio",      icon: Home,       shortLabel: "PORT"  },
   { id: "automations",    label: "Automations",    icon: Workflow,   shortLabel: "AUTO"  },
   { id: "ai-assets",      label: "AI Assets",      icon: Bot,        shortLabel: "AI"    },
   { id: "intelligence",   label: "Intelligence",   icon: Brain,      shortLabel: "INTEL" },
@@ -330,34 +333,34 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
                   />
                 )}
                 {/* 2: Leads — review mined leads */}
-                {i === 2 && (
-                  <LeadsPanel isActive={activeIndex === 2} />
-                )}
-                {/* 3: Automations — outreach sequences */}
-                {i === 3 && (
-                  <AutomationsPanel isActive={activeIndex === 3} realtorSlug={clientId} plan={plan} />
-                )}
-                {/* 4: AI Assets — calling agents */}
+                {i === 2 && <LeadsPanel isActive={activeIndex === 2} />}
+                {/* 3: Portfolio — active listings */}
+                {i === 3 && <PortfolioPanel isActive={activeIndex === 3} />}
+                {/* 4: Automations — outreach sequences */}
                 {i === 4 && (
+                  <AutomationsPanel isActive={activeIndex === 4} realtorSlug={clientId} plan={plan} />
+                )}
+                {/* 5: AI Assets — calling agents */}
+                {i === 5 && (
                   <AIAssetPanel
-                    isActive={activeIndex === 4}
+                    isActive={activeIndex === 5}
                     realtorSlug={clientId}
                     plan={plan}
                     isUnlocked={hasAIAgents}
                   />
                 )}
-                {/* 5: Intelligence — market data */}
-                {i === 5 && (
+                {/* 6: Intelligence — market data */}
+                {i === 6 && (
                   <IntelligenceAgentPanel
-                    isActive={activeIndex === 5}
+                    isActive={activeIndex === 6}
                     realtorSlug={clientId}
                     businessName={businessName}
                     plan={plan}
                     isUnlocked={hasIntelligence}
                   />
                 )}
-                {/* 6: The Cave — analytics */}
-                {i === 6 && (
+                {/* 7: The Cave — analytics */}
+                {i === 7 && (
                   <div className="h-full overflow-hidden bg-black relative">
                     <CavePanel plan={plan} isRunning={isMining} />
                   </div>
