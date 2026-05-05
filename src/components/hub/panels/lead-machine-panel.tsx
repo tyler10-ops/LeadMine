@@ -499,9 +499,9 @@ function ComposePanel({
 // ── Street View Carousel ───────────────────────────────────────────────────────
 
 const STREET_VIEW_ANGLES = [
-  { heading: "0",   fov: "90",  label: "Front"   },
-  { heading: "90",  fov: "90",  label: "Side"    },
-  { heading: "180", fov: "100", label: "Wide"    },
+  { heading: "0",   fov: "90",  label: "Front" },
+  { heading: "330", fov: "90",  label: "Left"  },
+  { heading: "30",  fov: "90",  label: "Right" },
 ];
 
 function StreetViewCarousel({ address }: { address: string }) {

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   Search, Download, RefreshCw, Gem, Zap, Pickaxe,
   Mail, Phone, Globe, ExternalLink, Loader2, X, ChevronUp, ChevronDown,
-  Building2, Home,
+  Building2, Home, ChevronRight, MapPin, User, Calendar, TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GEM, CAVE } from "@/lib/cave-theme";
@@ -46,6 +46,8 @@ interface PropertyLead {
   gem_grade: GemGrade;
   signal_flags: string[] | null;
   stage: string | null;
+  phone: string | null;
+  email: string | null;
   created_at: string;
 }
 
@@ -114,21 +116,220 @@ const GRADE_FILTERS = [
   { value: "rock",   label: "Rock"    },
 ];
 
+// ── Street View Carousel (drawer) ─────────────────────────────────────────────
+
+const SV_ANGLES = [
+  { heading: "0",   fov: "90", label: "Front" },
+  { heading: "330", fov: "90", label: "Left"  },
+  { heading: "30",  fov: "90", label: "Right" },
+];
+
+function DrawerStreetView({ address }: { address: string }) {
+  const [idx, setIdx]     = useState(0);
+  const [loaded, setLoaded] = useState<boolean[]>([false, false, false]);
+  const [errors, setErrors] = useState<boolean[]>([false, false, false]);
+  const encoded = encodeURIComponent(address);
+  const current = SV_ANGLES[idx];
+
+  const markLoaded = (i: number) => setLoaded(p => { const n = [...p]; n[i] = true; return n; });
+  const markError  = (i: number) => setErrors(p => { const n = [...p]; n[i] = true; return n; });
+
+  if (errors.every(Boolean)) return (
+    <div className="flex items-center justify-center h-36 rounded-xl text-[11px] text-neutral-600" style={{ background: CAVE.stoneDeep }}>
+      No street view available
+    </div>
+  );
+
+  return (
+    <div className="rounded-xl overflow-hidden relative" style={{ border: `1px solid ${CAVE.stoneMid}` }}>
+      <div className="relative w-full" style={{ aspectRatio: "16/7", background: CAVE.stoneDeep }}>
+        {!loaded[idx] && !errors[idx] && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-4 h-4 animate-spin text-neutral-700" />
+          </div>
+        )}
+        {!errors[idx] && (
+          <img
+            key={`${address}-${idx}`}
+            src={`/api/property/streetview?address=${encoded}&heading=${current.heading}&fov=${current.fov}&size=640x280`}
+            alt={`${current.label} view`}
+            className="w-full h-full object-cover"
+            style={{ opacity: loaded[idx] ? 1 : 0, transition: "opacity 0.3s ease" }}
+            onLoad={() => markLoaded(idx)}
+            onError={() => markError(idx)}
+          />
+        )}
+        <button
+          onClick={() => setIdx(i => (i - 1 + SV_ANGLES.length) % SV_ANGLES.length)}
+          className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}
+        >
+          <ChevronRight className="w-3.5 h-3.5 text-white rotate-180" />
+        </button>
+        <button
+          onClick={() => setIdx(i => (i + 1) % SV_ANGLES.length)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.12)" }}
+        >
+          <ChevronRight className="w-3.5 h-3.5 text-white" />
+        </button>
+      </div>
+      <div className="flex items-center justify-between px-3 py-1.5" style={{ background: CAVE.stoneDeep, borderTop: `1px solid ${CAVE.stoneMid}` }}>
+        <div className="flex gap-1.5">
+          {SV_ANGLES.map((a, i) => (
+            <button key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? 16 : 5, height: 5, borderRadius: 3, background: i === idx ? GEM.green : "rgba(255,255,255,0.12)", transition: "all 0.25s ease" }} />
+          ))}
+        </div>
+        <span className="text-[10px] text-neutral-600">{current.label}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── Lead Drawer ───────────────────────────────────────────────────────────────
+
+function LeadDrawer({ lead, onClose }: { lead: PropertyLead; onClose: () => void }) {
+  const cfg      = GRADE_CFG[lead.gem_grade] ?? GRADE_CFG.ungraded;
+  const equity   = lead.equity_percent != null ? Math.round(lead.equity_percent) : null;
+  const yrs      = lead.years_owned    != null ? Math.round(lead.years_owned)    : null;
+  const typeLabel = (lead.property_type ?? "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  const address  = [lead.property_address, lead.property_city, lead.property_state].filter(Boolean).join(", ");
+  const minedAt  = new Date(lead.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
+      {/* Panel */}
+      <div
+        className="fixed right-0 top-0 bottom-0 z-50 w-[380px] flex flex-col overflow-hidden shadow-2xl"
+        style={{ background: CAVE.deep, borderLeft: `1px solid ${CAVE.stoneMid}` }}
+      >
+        {/* Header */}
+        <div className="flex-shrink-0 px-5 py-4 flex items-start justify-between gap-3" style={{ borderBottom: `1px solid ${CAVE.stoneEdge}` }}>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ color: cfg.color, background: `${cfg.color}14`, border: `1px solid ${cfg.color}28` }}>
+                {cfg.icon}{cfg.label}
+              </span>
+              {lead.is_absentee_owner && (
+                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold" style={{ color: GEM.yellow, background: `${GEM.yellow}14`, border: `1px solid ${GEM.yellow}28` }}>
+                  Absentee
+                </span>
+              )}
+            </div>
+            <h3 className="text-[14px] font-bold text-neutral-100 leading-tight truncate">{lead.owner_name ?? "Unknown Owner"}</h3>
+            <p className="text-[11px] text-neutral-500 mt-0.5 truncate">{address || "—"}</p>
+          </div>
+          <button onClick={onClose} className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg transition-colors hover:bg-white/5">
+            <X className="w-4 h-4 text-neutral-500" />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Street View */}
+          {address && <DrawerStreetView address={address} />}
+
+          {/* Contact info */}
+          <div className="rounded-xl p-4 space-y-3" style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneEdge}` }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5">
+              <User className="w-3 h-3" />Contact Info
+            </p>
+            {lead.phone ? (
+              <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-[12px] transition-colors hover:opacity-80" style={{ color: GEM.green }}>
+                <Phone className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>{lead.phone}</span>
+              </a>
+            ) : (
+              <p className="text-[11px] text-neutral-600 flex items-center gap-2"><Phone className="w-3.5 h-3.5" />No phone on file</p>
+            )}
+            {lead.email ? (
+              <a href={`mailto:${lead.email}`} className="flex items-center gap-2 text-[12px] transition-colors hover:opacity-80" style={{ color: GEM.green }}>
+                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{lead.email}</span>
+              </a>
+            ) : (
+              <p className="text-[11px] text-neutral-600 flex items-center gap-2"><Mail className="w-3.5 h-3.5" />No email on file</p>
+            )}
+          </div>
+
+          {/* Property details */}
+          <div className="rounded-xl p-4 space-y-3" style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneEdge}` }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5">
+              <MapPin className="w-3 h-3" />Property Details
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { label: "Type",       value: typeLabel || "—"                    },
+                { label: "County",     value: lead.property_county ?? "—"         },
+                { label: "Equity",     value: equity != null ? `${equity}%` : "—" },
+                { label: "Yrs Owned",  value: yrs    != null ? `${yrs}y`    : "—" },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-lg px-3 py-2" style={{ background: CAVE.surface2 ?? "#111" }}>
+                  <p className="text-[10px] text-neutral-600">{label}</p>
+                  <p className="text-[12px] font-semibold text-neutral-200 mt-0.5">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Score */}
+          <div className="rounded-xl p-4" style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneEdge}` }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3" />Opportunity Score
+              </p>
+              <span className="text-[18px] font-bold tabular-nums" style={{ color: cfg.color }}>{lead.opportunity_score}</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: CAVE.stoneEdge }}>
+              <div className="h-full rounded-full transition-all" style={{ width: `${lead.opportunity_score}%`, background: cfg.color }} />
+            </div>
+          </div>
+
+          {/* Signal flags */}
+          {lead.signal_flags && lead.signal_flags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {lead.signal_flags.map(flag => (
+                <span key={flag} className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: `${GEM.green}10`, border: `1px solid ${GEM.green}20`, color: `${GEM.green}99` }}>
+                  {flag.replace(/_/g, " ")}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Mined at */}
+          <p className="text-[10px] text-neutral-700 flex items-center gap-1.5">
+            <Calendar className="w-3 h-3" />Mined {minedAt}
+          </p>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function LeadsPanel({ isActive }: { isActive: boolean }) {
-  const [leadType,  setLeadType]  = useState<LeadType>("property");
-  const [bizLeads,  setBizLeads]  = useState<BusinessLead[]>([]);
-  const [propLeads, setPropLeads] = useState<PropertyLead[]>([]);
-  const [stats,     setStats]     = useState<Stats>({ total: 0, elite: 0, refined: 0, rock: 0, today: 0 });
-  const [loading,   setLoading]   = useState(true);
-  const [refreshing,setRefresh]   = useState(false);
-  const [error,     setError]     = useState<string | null>(null);
-  const [query,     setQuery]     = useState("");
-  const [grade,     setGrade]     = useState("");
-  const [sortKey,   setSortKey]   = useState<SortKey>("created_at");
-  const [sortDir,   setSortDir]   = useState<"asc" | "desc">("desc");
-  const [fetched,   setFetched]   = useState(false);
+  const [leadType,     setLeadType]    = useState<LeadType>("property");
+  const [bizLeads,     setBizLeads]    = useState<BusinessLead[]>([]);
+  const [propLeads,    setPropLeads]   = useState<PropertyLead[]>([]);
+  const [stats,        setStats]       = useState<Stats>({ total: 0, elite: 0, refined: 0, rock: 0, today: 0 });
+  const [loading,      setLoading]     = useState(true);
+  const [refreshing,   setRefresh]     = useState(false);
+  const [error,        setError]       = useState<string | null>(null);
+  const [query,        setQuery]       = useState("");
+  const [grade,        setGrade]       = useState("");
+  const [sortKey,      setSortKey]     = useState<SortKey>("created_at");
+  const [sortDir,      setSortDir]     = useState<"asc" | "desc">("desc");
+  const [fetched,      setFetched]     = useState(false);
+  const [selectedLead, setSelectedLead] = useState<PropertyLead | null>(null);
 
   const fetchLeads = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefresh(true); else setLoading(true);
@@ -404,10 +605,11 @@ export function LeadsPanel({ isActive }: { isActive: boolean }) {
                 return (
                   <tr
                     key={lead.id}
-                    className="group transition-colors"
+                    className="group transition-colors cursor-pointer"
                     style={{ borderBottom: `1px solid ${CAVE.stoneEdge}`, background: idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.008)" }}
                     onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,255,136,0.03)")}
                     onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? "transparent" : "rgba(255,255,255,0.008)")}
+                    onClick={() => setSelectedLead(lead)}
                   >
                     {/* Owner / Address */}
                     <td className="px-3 py-2.5 max-w-[220px]">
@@ -573,6 +775,11 @@ export function LeadsPanel({ isActive }: { isActive: boolean }) {
           {" · "}{leadType === "property" ? "Property Owners" : "Business Leads"}
         </span>
       </div>
+
+      {/* Lead detail drawer */}
+      {selectedLead && (
+        <LeadDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} />
+      )}
     </div>
   );
 }
