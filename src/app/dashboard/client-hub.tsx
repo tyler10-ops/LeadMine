@@ -277,13 +277,24 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
 
             <div className="h-3.5 w-px bg-white/[0.06]" />
 
-            {/* Live status */}
+            {/* Live mining status */}
             <div className="flex items-center gap-1.5">
-              <span className="relative flex h-1.5 w-1.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00FF88] opacity-60" />
-                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#00FF88]" />
-              </span>
-              <span className="text-[11px] text-neutral-500">3 Miners Active</span>
+              {isMining ? (
+                <>
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-60" style={{ background: "#00FF88" }} />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5" style={{ background: "#00FF88" }} />
+                  </span>
+                  <span className="text-[11px]" style={{ color: "#00FF88" }}>Miner Active</span>
+                </>
+              ) : (
+                <>
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-neutral-700" />
+                  </span>
+                  <span className="text-[11px] text-neutral-600">Miners Idle</span>
+                </>
+              )}
             </div>
 
             <div
