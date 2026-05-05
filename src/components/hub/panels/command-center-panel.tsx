@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -16,9 +16,9 @@ import {
   AlertCircle,
   ChevronRight,
   BarChart3,
-  Newspaper,
   Loader2,
   ArrowUpRight,
+  Radio,
 } from "lucide-react";
 import {
   GEM,
@@ -56,10 +56,19 @@ const AGENTS: { name: string; icon: React.ElementType; note: string }[] = [
   { name: "Email Cron",     icon: CalendarCheck, note: "Daily briefs on" },
 ];
 
-const FALLBACK_SIGNALS: { direction: "bullish" | "neutral" | "bearish"; headline: string }[] = [
-  { direction: "bullish", headline: "Mortgage rates near 6.4% — buyer demand stabilizing" },
-  { direction: "neutral", headline: "Local inventory up 3% MoM — moderate competition" },
-  { direction: "bearish", headline: "Fed signals caution on rate cuts through Q3" },
+interface LiveSignal {
+  direction: "bullish" | "neutral" | "bearish";
+  headline: string;
+  category?: string;
+  region?: string;
+}
+
+const FALLBACK_SIGNALS: LiveSignal[] = [
+  { direction: "bullish", headline: "Mortgage rates near 6.4% — buyer demand stabilizing",   category: "rates"     },
+  { direction: "neutral", headline: "Local inventory up 3% MoM — moderate competition",      category: "inventory" },
+  { direction: "bearish", headline: "Fed signals caution on rate cuts through Q3",            category: "policy"    },
+  { direction: "bullish", headline: "Purchase applications rise 6% — demand recovery signal", category: "demand"   },
+  { direction: "neutral", headline: "New construction permits steady — supply holding",       category: "supply"    },
 ];
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -81,32 +90,70 @@ interface CommandCenterPanelProps {
 }
 
 export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
-  const [data, setData]             = useState<CommandCenterData | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [marketSignals, setMarketSignals] = useState(FALLBACK_SIGNALS);
+  const [data, setData]                   = useState<CommandCenterData | null>(null);
+  const [loading, setLoading]             = useState(true);
+  const [signals, setSignals]             = useState<LiveSignal[]>(FALLBACK_SIGNALS);
+  const [signalIdx, setSignalIdx]         = useState(0);
+  const [signalFade, setSignalFade]       = useState(true);
+  const [lastUpdated, setLastUpdated]     = useState<Date | null>(null);
+  const signalTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cycle through signals every 4s
+  useEffect(() => {
+    if (!isActive || signals.length <= 1) return;
+    signalTimer.current = setInterval(() => {
+      setSignalFade(false);
+      setTimeout(() => {
+        setSignalIdx((i) => (i + 1) % signals.length);
+        setSignalFade(true);
+      }, 250);
+    }, 4000);
+    return () => { if (signalTimer.current) clearInterval(signalTimer.current); };
+  }, [isActive, signals.length]);
 
   useEffect(() => {
     if (!isActive) return;
-    setLoading(true);
-    fetch("/api/command-center")
-      .then((r) => r.json())
-      .then((d) => setData(d))
-      .catch(() => setData(null))
-      .finally(() => setLoading(false));
 
-    fetch("/api/market-intel?limit=3")
-      .then((r) => r.json())
-      .then((d) => {
-        const items = Array.isArray(d) ? d : (d.signals ?? d.data ?? []);
-        if (items.length > 0) {
-          setMarketSignals(items.slice(0, 3).map((s: { direction?: string; sentiment?: string; headline?: string; title?: string }) => ({
-            direction: (s.direction ?? s.sentiment ?? "neutral") as "bullish" | "neutral" | "bearish",
-            headline:  s.headline ?? s.title ?? "",
-          })));
-        }
-      })
-      .catch(() => {});
+    const load = () => {
+      fetch("/api/command-center")
+        .then((r) => r.json())
+        .then((d) => { if (!d.error) setData(d); })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+
+      // Use richer signals endpoint with direction + category
+      fetch("/api/signals?limit=12")
+        .then((r) => r.json())
+        .then((d) => {
+          const items: LiveSignal[] = (d.signals ?? []).map((s: {
+            signal_direction?: string;
+            headline?: string;
+            category?: string;
+            geography?: string;
+          }) => ({
+            direction: (s.signal_direction === "up" ? "bullish" : s.signal_direction === "down" ? "bearish" : "neutral") as LiveSignal["direction"],
+            headline:  s.headline ?? "",
+            category:  s.category ?? "",
+            region:    s.geography ?? "",
+          })).filter((s: LiveSignal) => s.headline);
+          if (items.length >= 3) {
+            setSignals(items);
+            setSignalIdx(0);
+          }
+          setLastUpdated(new Date());
+        })
+        .catch(() => { setLastUpdated(new Date()); });
+    };
+
+    setLoading(true);
+    load();
+    const interval = setInterval(load, 30_000);
+    return () => clearInterval(interval);
   }, [isActive]);
+
+  const visibleSignals = signals.slice(signalIdx, signalIdx + 3).concat(
+    signals.slice(0, Math.max(0, (signalIdx + 3) - signals.length))
+  );
 
   const stages = data
     ? (["New", "Contacted", "Qualified", "Booked", "Dead"] as const).map((label) => {
@@ -386,31 +433,84 @@ export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
           </MiningPanel>
         </div>
 
-        {/* Market Signals */}
+        {/* Live Market Intelligence Radar */}
         <MiningPanel carved>
-          <div className="flex items-center justify-between mb-4">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Newspaper className="w-3.5 h-3.5 text-neutral-500" />
-              <p className="text-[12px] font-semibold text-neutral-300">Market Signals</p>
+              <Radio className="w-3.5 h-3.5" style={{ color: GEM.green }} />
+              <p className="text-[12px] font-semibold text-neutral-300">Market Intelligence</p>
+              {/* Pulsing LIVE badge */}
+              <span
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-widest uppercase"
+                style={{ background: "rgba(0,255,136,0.08)", border: "1px solid rgba(0,255,136,0.2)", color: GEM.green }}
+              >
+                <span
+                  className="w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: GEM.green, boxShadow: `0 0 6px ${GEM.green}` }}
+                />
+                Live
+              </span>
             </div>
-            <a href="/dashboard/market" className="text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
-              View all signals →
-            </a>
+            <div className="flex items-center gap-3">
+              {lastUpdated && (
+                <span className="text-[10px] text-neutral-700">
+                  {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
+              <a href="/dashboard/intelligence" className="text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
+                Full intel →
+              </a>
+            </div>
           </div>
-          <div className="space-y-2">
-            {marketSignals.map((s, i) => {
+
+          {/* Cycling signals */}
+          <div
+            className="space-y-1.5 transition-opacity duration-250"
+            style={{ opacity: signalFade ? 1 : 0 }}
+          >
+            {visibleSignals.map((s, i) => {
               const gemKey = SIGNAL_GEM[s.direction];
+              const isFirst = i === 0;
               return (
                 <div
-                  key={i}
-                  className="flex items-start gap-3 px-3 py-2.5 rounded-xl"
-                  style={{ background: GLOW[gemKey].bg, border: `1px solid ${GLOW[gemKey].border}` }}
+                  key={`${signalIdx}-${i}`}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl"
+                  style={{
+                    background: isFirst ? GLOW[gemKey].bg : "rgba(255,255,255,0.02)",
+                    border: `1px solid ${isFirst ? GLOW[gemKey].border : CAVE.stoneMid}`,
+                    opacity: isFirst ? 1 : 0.55,
+                  }}
                 >
-                  <GemIndicator variant={gemKey} size="xs" className="mt-1.5" />
-                  <p className="text-[12px] text-neutral-400 leading-relaxed">{s.headline}</p>
+                  <GemIndicator variant={gemKey} size="xs" className="flex-shrink-0" />
+                  <p className="text-[12px] text-neutral-300 leading-snug flex-1 truncate">{s.headline}</p>
+                  {s.category && (
+                    <span className="text-[9px] font-medium uppercase tracking-wider text-neutral-700 flex-shrink-0">
+                      {s.category}
+                    </span>
+                  )}
                 </div>
               );
             })}
+          </div>
+
+          {/* Progress dots */}
+          <div className="flex items-center justify-between mt-3 pt-2.5" style={{ borderTop: `1px solid ${CAVE.stoneMid}` }}>
+            <div className="flex items-center gap-1">
+              {signals.map((_, i) => (
+                <span
+                  key={i}
+                  className="rounded-full transition-all duration-300"
+                  style={{
+                    width:      i === signalIdx ? "14px" : "5px",
+                    height:     "5px",
+                    background: i === signalIdx ? GEM.green : CAVE.stoneMid,
+                    boxShadow:  i === signalIdx ? `0 0 6px ${GEM.green}80` : "none",
+                  }}
+                />
+              ))}
+            </div>
+            <span className="text-[10px] text-neutral-700">{signals.length} signals active</span>
           </div>
         </MiningPanel>
       </div>

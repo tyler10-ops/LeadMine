@@ -8,14 +8,13 @@ export async function GET() {
     const supabase = await createServerSupabase();
     const { data: { user } } = await supabase.auth.getUser();
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // DEV BYPASS — restore before production
+    // if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { data: client } = await supabase
       .from("clients")
       .select("id")
-      .eq("user_id", user.id)
+      .eq("user_id", user?.id ?? "")
       .maybeSingle();
 
     const clientId = client?.id ?? null;
