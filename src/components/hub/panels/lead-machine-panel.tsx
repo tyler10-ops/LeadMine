@@ -496,6 +496,101 @@ function ComposePanel({
   );
 }
 
+// ── Street View Carousel ───────────────────────────────────────────────────────
+
+const STREET_VIEW_ANGLES = [
+  { heading: "0",   fov: "90",  label: "Front"   },
+  { heading: "90",  fov: "90",  label: "Side"    },
+  { heading: "180", fov: "100", label: "Wide"    },
+];
+
+function StreetViewCarousel({ address }: { address: string }) {
+  const [idx, setIdx]       = useState(0);
+  const [loaded, setLoaded] = useState<boolean[]>([false, false, false]);
+  const [errors, setErrors] = useState<boolean[]>([false, false, false]);
+
+  const encoded = encodeURIComponent(address);
+  const current = STREET_VIEW_ANGLES[idx];
+
+  const markLoaded = (i: number) =>
+    setLoaded((prev) => { const n = [...prev]; n[i] = true; return n; });
+  const markError = (i: number) =>
+    setErrors((prev) => { const n = [...prev]; n[i] = true; return n; });
+
+  if (errors.every(Boolean)) return null;
+
+  return (
+    <div className="mx-4 mt-3 rounded-xl overflow-hidden relative" style={{ border: `1px solid ${CAVE.stoneMid}` }}>
+      {/* Main image */}
+      <div className="relative w-full" style={{ aspectRatio: "16/7", background: CAVE.stoneDeep }}>
+        {!loaded[idx] && !errors[idx] && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="w-4 h-4 animate-spin text-neutral-700" />
+          </div>
+        )}
+        {!errors[idx] && (
+          <img
+            key={idx}
+            src={`/api/property/streetview?address=${encoded}&heading=${current.heading}&fov=${current.fov}&size=600x280`}
+            alt={`${current.label} view of ${address}`}
+            className="w-full h-full object-cover"
+            style={{ opacity: loaded[idx] ? 1 : 0, transition: "opacity 0.3s ease" }}
+            onLoad={() => markLoaded(idx)}
+            onError={() => markError(idx)}
+          />
+        )}
+        {/* Address overlay */}
+        <div
+          className="absolute bottom-0 left-0 right-0 px-3 py-2"
+          style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75), transparent)" }}
+        >
+          <p className="text-[10px] text-neutral-300 truncate">{address}</p>
+        </div>
+        {/* Nav arrows */}
+        {STREET_VIEW_ANGLES.length > 1 && (
+          <>
+            <button
+              onClick={() => setIdx((i) => (i - 1 + STREET_VIEW_ANGLES.length) % STREET_VIEW_ANGLES.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: "rgba(0,0,0,0.55)", border: `1px solid rgba(255,255,255,0.12)` }}
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-white rotate-180" />
+            </button>
+            <button
+              onClick={() => setIdx((i) => (i + 1) % STREET_VIEW_ANGLES.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center transition-all hover:scale-110"
+              style={{ background: "rgba(0,0,0,0.55)", border: `1px solid rgba(255,255,255,0.12)` }}
+            >
+              <ChevronRight className="w-3.5 h-3.5 text-white" />
+            </button>
+          </>
+        )}
+      </div>
+      {/* Angle dots */}
+      <div
+        className="flex items-center justify-between px-3 py-1.5"
+        style={{ background: CAVE.stoneDeep, borderTop: `1px solid ${CAVE.stoneMid}` }}
+      >
+        <div className="flex gap-1.5">
+          {STREET_VIEW_ANGLES.map((a, i) => (
+            <button
+              key={i}
+              onClick={() => setIdx(i)}
+              className="transition-all"
+              style={{
+                width: i === idx ? 16 : 5, height: 5, borderRadius: 3,
+                background: i === idx ? GEM.green : "rgba(255,255,255,0.12)",
+                transition: "all 0.25s ease",
+              }}
+            />
+          ))}
+        </div>
+        <span className="text-[10px] text-neutral-600">{current.label} view · Street View</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Property Lead Card ─────────────────────────────────────────────────────────
 
 function PropertyLeadCard({
@@ -623,6 +718,11 @@ function PropertyLeadCard({
           </span>
         )}
       </div>
+
+      {/* Street View photos */}
+      {lead.propertyAddress && (
+        <StreetViewCarousel address={`${lead.propertyAddress}, ${lead.city}, ${lead.state}`} />
+      )}
 
       {/* Value & Equity report */}
       {lead.estimatedValue > 0 && (
