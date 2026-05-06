@@ -7,6 +7,7 @@ import { GemGrade } from "@/components/ui/gem-grade";
 import { MiningProgress } from "@/components/ui/mining-progress";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { StickyFooter } from "@/components/landing/sticky-footer";
+import { LandingNav } from "@/components/landing/nav";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 const GEM = { green: "#00FF88", yellow: "#FFD60A", red: "#FF3B30" };
@@ -67,43 +68,7 @@ export default async function LandingPage({ searchParams }: { searchParams: Prom
     <div className="min-h-screen text-neutral-200" style={{ background: "#07070d" }}>
 
       {/* ── NAV ── */}
-      <nav className="flex items-center justify-between px-8 py-5 max-w-7xl mx-auto relative z-20">
-        <Link href="/" className="flex items-center gap-1">
-          <img src="/logo.png" alt="LeadMine" className="w-[68px] h-[68px] object-contain" />
-          <div>
-            <span className="text-sm font-bold tracking-[0.15em] text-neutral-100 uppercase">Lead</span>
-            <span className="text-[10px] font-medium text-neutral-600 tracking-[0.3em] uppercase ml-1.5">MINE</span>
-          </div>
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link href="#pricing" className="text-sm text-neutral-500 hover:text-neutral-200 transition-colors px-3 py-2">
-            Pricing
-          </Link>
-          <Link href="/auth/login" className="text-sm text-neutral-500 hover:text-neutral-200 transition-colors px-3 py-2">
-            Sign in
-          </Link>
-          {isAuthenticated ? (
-            <Link
-              href="/dashboard/hub"
-              className="text-sm px-5 py-2.5 rounded-lg font-semibold transition-all"
-              style={{ background: GEM.green, color: "#000", boxShadow: `0 0 20px rgba(0,255,136,0.25)` }}
-            >
-              Go to Dashboard
-            </Link>
-          ) : (
-            <>
-
-              <Link
-                href="/auth/signup"
-                className="text-sm px-5 py-2.5 rounded-lg font-semibold transition-all"
-                style={{ background: GEM.green, color: "#000", boxShadow: `0 0 20px rgba(0,255,136,0.25)` }}
-              >
-                Start Mining
-              </Link>
-            </>
-          )}
-        </div>
-      </nav>
+      <LandingNav isAuthenticated={isAuthenticated} />
 
       {/* ── HERO ── */}
       <section className="relative overflow-hidden min-h-[90vh] flex items-center">
