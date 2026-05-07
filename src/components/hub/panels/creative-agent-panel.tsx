@@ -149,7 +149,7 @@ export function CreativeAgentPanel({ isActive }: CreativeAgentPanelProps) {
   return (
     <div
       className={cn(
-        "h-full flex transition-all duration-500",
+        "h-full w-full flex transition-all duration-500",
         isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
       )}
       style={{ background: CAVE.deep }}
