@@ -1194,6 +1194,240 @@ function MiningFullscreen({
   );
 }
 
+// ── Mining Launch Screen ──────────────────────────────────────────────────────
+
+const PROP_TYPE_ICONS: Record<string, string> = {
+  single_family: "🏠",
+  condo:         "🏢",
+  multi_family:  "🏘",
+  townhouse:     "🏙",
+};
+
+function MiningLaunchScreen({
+  selectedZips,
+  zipInput,
+  setZipInput,
+  zipError,
+  setZipError,
+  addZip,
+  removeZip,
+  zipLimit,
+  selectedPropertyTypes,
+  togglePropertyType,
+  minEquity,
+  setMinEquity,
+  minYearsOwned,
+  setMinYearsOwned,
+  leadType,
+  onMine,
+}: {
+  selectedZips: string[];
+  zipInput: string;
+  setZipInput: (v: string) => void;
+  zipError: string;
+  setZipError: (v: string) => void;
+  addZip: (v: string) => void;
+  removeZip: (v: string) => void;
+  zipLimit: number;
+  selectedPropertyTypes: string[];
+  togglePropertyType: (t: string) => void;
+  minEquity: number;
+  setMinEquity: (v: number) => void;
+  minYearsOwned: number;
+  setMinYearsOwned: (v: number) => void;
+  leadType: "property" | "business";
+  onMine: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center relative overflow-hidden py-8 px-6" style={{ background: CAVE.deep }}>
+      <style>{`
+        @keyframes lm-grid-pulse {
+          0%, 100% { opacity: 0.4; }
+          50%       { opacity: 0.7; }
+        }
+        @keyframes lm-launch-float {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-4px); }
+        }
+      `}</style>
+
+      {/* Background grid */}
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: `linear-gradient(${GEM.green}07 1px, transparent 1px), linear-gradient(90deg, ${GEM.green}07 1px, transparent 1px)`,
+        backgroundSize: "48px 48px",
+        maskImage: "radial-gradient(ellipse 70% 80% at 50% 50%, black 10%, transparent 100%)",
+        animation: "lm-grid-pulse 4s ease-in-out infinite",
+      }} />
+
+      {/* Glow */}
+      <div className="absolute pointer-events-none rounded-full" style={{
+        width: 600, height: 600,
+        top: "50%", left: "50%",
+        transform: "translate(-50%,-50%)",
+        background: `radial-gradient(circle, ${GEM.green}09 0%, transparent 60%)`,
+      }} />
+
+      <div className="relative z-10 w-full max-w-lg space-y-5">
+
+        {/* Header */}
+        <div className="text-center space-y-2" style={{ animation: "lm-launch-float 6s ease-in-out infinite" }}>
+          <div className="text-4xl mb-2">⛏</div>
+          <h2 className="text-[22px] font-black text-white tracking-tight">Mine Your Market</h2>
+          <p className="text-[12px] text-neutral-500 leading-relaxed">
+            {leadType === "property"
+              ? "Enter ZIP codes to find motivated property owners with high equity and long ownership."
+              : "Enter ZIP codes to find qualified business leads in your target market."}
+          </p>
+        </div>
+
+        {/* ZIP input card */}
+        <div className="rounded-2xl border p-5 space-y-4" style={{ background: "rgba(13,13,20,0.9)", borderColor: `${GEM.green}20`, boxShadow: `0 0 32px ${GEM.green}08` }}>
+          {/* ZIP chips */}
+          {selectedZips.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedZips.map((z) => (
+                <span key={z} className="flex items-center gap-1.5 text-[12px] px-3 py-1.5 rounded-xl border font-semibold" style={{ background: `${GEM.green}12`, borderColor: `${GEM.green}30`, color: GEM.green }}>
+                  <MapPin className="w-3 h-3" />
+                  {z}
+                  <button onClick={() => removeZip(z)} className="ml-0.5 opacity-60 hover:opacity-100 transition-opacity">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* ZIP input row */}
+          {selectedZips.length < zipLimit ? (
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: selectedZips.length > 0 ? GEM.green : "#525252" }} />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={5}
+                  placeholder={selectedZips.length === 0 ? "Enter ZIP code — e.g. 90210" : "Add another ZIP..."}
+                  value={zipInput}
+                  onChange={(e) => { setZipInput(e.target.value.replace(/\D/g, "")); setZipError(""); }}
+                  onKeyDown={(e) => { if (e.key === "Enter") addZip(zipInput); }}
+                  className="w-full pl-10 pr-3 py-3 rounded-xl text-[14px] font-medium text-neutral-100 placeholder-neutral-600 outline-none transition-all"
+                  style={{
+                    background: CAVE.surface2,
+                    border: `1.5px solid ${zipError ? GEM.red + "60" : zipInput.length === 5 ? GEM.green + "50" : CAVE.stoneMid}`,
+                    boxShadow: zipInput.length === 5 ? `0 0 12px ${GEM.green}12` : "none",
+                  }}
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={() => addZip(zipInput)}
+                disabled={zipInput.length !== 5}
+                className="px-4 py-3 rounded-xl text-[13px] font-bold transition-all disabled:opacity-35"
+                style={{ background: `${GEM.green}20`, border: `1.5px solid ${GEM.green}35`, color: GEM.green }}
+              >
+                Add
+              </button>
+            </div>
+          ) : (
+            <p className="text-[11px] text-center text-neutral-600 py-2">Max {zipLimit} ZIP{zipLimit === 1 ? "" : "s"} on this plan</p>
+          )}
+          {zipError && <p className="text-[11px]" style={{ color: GEM.red }}>{zipError}</p>}
+
+          {/* Property type tiles */}
+          {leadType === "property" && (
+            <div>
+              <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-2.5">Property Type</p>
+              <div className="grid grid-cols-4 gap-2">
+                {PROPERTY_TYPES.map((type) => {
+                  const active = selectedPropertyTypes.includes(type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => togglePropertyType(type)}
+                      className="flex flex-col items-center gap-1.5 py-3 rounded-xl border text-[10px] font-semibold transition-all"
+                      style={{
+                        background:  active ? `${GEM.green}12` : CAVE.surface2,
+                        borderColor: active ? `${GEM.green}35` : CAVE.stoneMid,
+                        color:       active ? GEM.green : "#525252",
+                      }}
+                    >
+                      <span className="text-[18px]">{PROP_TYPE_ICONS[type]}</span>
+                      {type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).replace("Family", "Fam.")}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sliders */}
+          {leadType === "property" && (
+            <div className="grid grid-cols-2 gap-4 pt-1">
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-[10px] text-neutral-500">Min Equity</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ color: GEM.yellow, background: `${GEM.yellow}12` }}>{minEquity}%</span>
+                </div>
+                <input type="range" min={0} max={80} step={10} value={minEquity}
+                  onChange={(e) => setMinEquity(Number(e.target.value))}
+                  className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                  style={{ accentColor: GEM.yellow, background: `linear-gradient(to right, ${GEM.yellow} ${(minEquity / 80) * 100}%, rgba(255,255,255,0.10) ${(minEquity / 80) * 100}%)` }}
+                />
+              </div>
+              <div>
+                <div className="flex justify-between mb-2">
+                  <span className="text-[10px] text-neutral-500">Min Yrs Owned</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ color: GEM.yellow, background: `${GEM.yellow}12` }}>{minYearsOwned}yr</span>
+                </div>
+                <input type="range" min={0} max={30} step={5} value={minYearsOwned}
+                  onChange={(e) => setMinYearsOwned(Number(e.target.value))}
+                  className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                  style={{ accentColor: GEM.yellow, background: `linear-gradient(to right, ${GEM.yellow} ${(minYearsOwned / 30) * 100}%, rgba(255,255,255,0.10) ${(minYearsOwned / 30) * 100}%)` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Mine button */}
+        <button
+          onClick={onMine}
+          disabled={selectedZips.length === 0}
+          className="w-full py-4 rounded-2xl text-[15px] font-black tracking-wide transition-all disabled:opacity-35 disabled:cursor-not-allowed flex items-center justify-center gap-2.5"
+          style={{
+            background:  selectedZips.length > 0 ? GEM.green : CAVE.surface2,
+            color:       selectedZips.length > 0 ? "#000" : "#525252",
+            boxShadow:   selectedZips.length > 0 ? `0 0 36px ${GEM.green}35, 0 4px 16px rgba(0,0,0,0.4)` : "none",
+            border:      selectedZips.length > 0 ? "none" : `1px solid ${CAVE.stoneMid}`,
+          }}
+        >
+          <Play className="w-5 h-5" />
+          {selectedZips.length === 0
+            ? "Enter a ZIP code to start"
+            : `Launch Mine — ${selectedZips.length} ZIP${selectedZips.length === 1 ? "" : "s"}`}
+        </button>
+
+        {/* Footer hint */}
+        <div className="flex items-center justify-center gap-6 text-center">
+          {[
+            { icon: "⛏", label: "Auto-mines nightly" },
+            { icon: "💎", label: "AI grades every lead" },
+            { icon: "⚡", label: "Results in minutes" },
+          ].map(({ icon, label }) => (
+            <div key={label} className="space-y-1">
+              <div className="text-[16px]">{icon}</div>
+              <p className="text-[10px] text-neutral-700">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────────
 
 
@@ -2106,8 +2340,30 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
           />
         )}
 
-        {/* ── CENTER COLUMN ────────────────────────────────────────────── */}
-        <div className={cn("flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete") && "hidden")}>
+        {/* ── LAUNCH SCREEN — shown when no leads and idle ─────────────── */}
+        {ALL_LEADS.length === 0 && miningStatus === "idle" && (
+          <MiningLaunchScreen
+            selectedZips={selectedZips}
+            zipInput={zipInput}
+            setZipInput={setZipInput}
+            zipError={zipError}
+            setZipError={setZipError}
+            addZip={addZip}
+            removeZip={removeZip}
+            zipLimit={zipLimit}
+            selectedPropertyTypes={selectedPropertyTypes}
+            togglePropertyType={togglePropertyType}
+            minEquity={minEquity}
+            setMinEquity={setMinEquity}
+            minYearsOwned={minYearsOwned}
+            setMinYearsOwned={setMinYearsOwned}
+            leadType={leadType}
+            onMine={handleStartMine}
+          />
+        )}
+
+        {/* ── CENTER COLUMN — shown when leads exist ────────────────────── */}
+        <div className={cn("flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete" || (ALL_LEADS.length === 0 && miningStatus === "idle")) && "hidden")}>
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -2225,48 +2481,6 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
                 }}
               />
             ))}
-
-            {filteredLeads.length === 0 && ALL_LEADS.length === 0 && (
-              <div
-                className="rounded-2xl p-8 text-center space-y-6"
-                style={{ background: `${GEM.green}06`, border: `1px solid ${GEM.green}18` }}
-              >
-                <div className="flex justify-center">
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                    style={{ background: `${GEM.green}14`, border: `1px solid ${GEM.green}28` }}
-                  >
-                    <Play className="w-7 h-7" style={{ color: GEM.green }} />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[15px] font-bold text-white mb-1">Start Mining Leads</p>
-                  <p className="text-[12px] text-neutral-500 leading-relaxed max-w-xs mx-auto">
-                    Enter ZIP codes in the left panel, then click Mine to find motivated property owners in your area.
-                  </p>
-                </div>
-                <div className="flex justify-center gap-6 text-center">
-                  {[
-                    { step: "1", label: "Enter ZIPs" },
-                    { step: "2", label: "Set filters" },
-                    { step: "3", label: "Mine & review" },
-                  ].map(({ step, label }) => (
-                    <div key={step} className="space-y-1.5">
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold mx-auto"
-                        style={{ background: `${GEM.green}18`, border: `1px solid ${GEM.green}30`, color: GEM.green }}
-                      >
-                        {step}
-                      </div>
-                      <p className="text-[10px] text-neutral-600">{label}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[10px] text-neutral-700">
-                  Nightly auto-mine runs at 2 AM — or run manually anytime
-                </p>
-              </div>
-            )}
 
             {filteredLeads.length === 0 && ALL_LEADS.length > 0 && (
               <div className="py-16 text-center space-y-2">
