@@ -5,6 +5,7 @@ import {
   Search, Download, RefreshCw, Gem, Zap, Pickaxe,
   Mail, Phone, Globe, ExternalLink, Loader2, X, ChevronUp, ChevronDown,
   Building2, Home, ChevronRight, MapPin, User, Calendar, TrendingUp,
+  Bot, Workflow, CheckCircle2, Circle, ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GEM, CAVE } from "@/lib/cave-theme";
@@ -49,6 +50,7 @@ interface PropertyLead {
   stage: string | null;
   phone: string | null;
   email: string | null;
+  enrichment_data: { emails?: string[]; phones?: string[]; description?: string } | null;
   created_at: string;
 }
 
@@ -229,7 +231,7 @@ function DrawerStreetView({ address }: { address: string }) {
       </div>
       <div className="flex items-center justify-between px-3 py-1.5" style={{ background: CAVE.stoneDeep, borderTop: `1px solid ${CAVE.stoneMid}` }}>
         <div className="flex gap-1.5">
-          {SV_ANGLES.map((a, i) => (
+          {SV_ANGLES.map((_a, i) => (
             <button key={i} onClick={() => setIdx(i)} style={{ width: i === idx ? 16 : 5, height: 5, borderRadius: 3, background: i === idx ? GEM.green : "rgba(255,255,255,0.12)", transition: "all 0.25s ease" }} />
           ))}
         </div>
@@ -241,13 +243,72 @@ function DrawerStreetView({ address }: { address: string }) {
 
 // ── Lead Drawer ───────────────────────────────────────────────────────────────
 
-function LeadDrawer({ lead, onClose }: { lead: PropertyLead; onClose: () => void }) {
+// ── Outreach stage config ─────────────────────────────────────────────────────
+
+const STAGE_STEPS = [
+  { key: "new",       label: "Discovered",  next: "Send first outreach"          },
+  { key: "contacted", label: "Contacted",   next: "Follow up within 3 days"      },
+  { key: "qualified", label: "Qualified",   next: "Book a showing or call"        },
+  { key: "booked",    label: "Booked",      next: "Confirm & prepare for meeting" },
+] as const;
+
+type StageKey = typeof STAGE_STEPS[number]["key"];
+
+function buildLeadSummary(lead: PropertyLead): string {
+  const name    = lead.owner_name ?? "The owner";
+  const address = lead.property_address
+    ? `${lead.property_address}${lead.property_city ? ", " + lead.property_city : ""}${lead.property_state ? " " + lead.property_state : ""}`
+    : lead.property_city ? `a property in ${lead.property_city}` : "an off-market property";
+  const typeLabel = (lead.property_type ?? "property").replace(/_/g, " ");
+  const equity    = lead.equity_percent != null ? Math.round(lead.equity_percent) : null;
+  const yrs       = lead.years_owned    != null ? Math.round(lead.years_owned)    : null;
+  const absentee  = lead.is_absentee_owner;
+  const grade     = lead.gem_grade;
+
+  const p1Parts: string[] = [];
+  p1Parts.push(`${name} owns a ${typeLabel} at ${address}.`);
+  if (yrs != null) p1Parts.push(`They have owned this property for approximately ${yrs} year${yrs === 1 ? "" : "s"}.`);
+  if (equity != null) p1Parts.push(`Current equity is estimated at ${equity}%, indicating ${equity >= 60 ? "strong" : equity >= 30 ? "moderate" : "limited"} financial flexibility.`);
+  if (absentee) p1Parts.push("The owner does not appear to reside at the property, making this a strong absentee-owner lead.");
+
+  const flags = lead.signal_flags ?? [];
+  const p2Parts: string[] = [];
+  if (grade === "elite") p2Parts.push("This lead scores in the Elite tier — one of the strongest seller-motivation profiles in your pipeline.");
+  else if (grade === "refined") p2Parts.push("This is a Refined-grade lead with meaningful seller motivation signals.");
+  else p2Parts.push("This lead is in the early qualification stage.");
+  if (flags.length > 0) p2Parts.push(`Key signals include: ${flags.slice(0, 3).map(f => f.replace(/_/g, " ")).join(", ")}.`);
+  p2Parts.push(grade === "elite" || grade === "refined"
+    ? "Prioritize direct outreach — a personalized letter or call referencing their equity position tends to resonate best with this profile."
+    : "Consider adding to an automated drip sequence to keep this contact warm while higher-priority leads are worked.");
+
+  return [p1Parts.join(" "), p2Parts.join(" ")].join("\n\n");
+}
+
+function LeadDrawer({ lead, onClose, onNavigateToAutomations }: {
+  lead: PropertyLead;
+  onClose: () => void;
+  onNavigateToAutomations?: () => void;
+}) {
+  const [summaryOpen, setSummaryOpen] = useState(false);
+
   const cfg      = GRADE_CFG[lead.gem_grade] ?? GRADE_CFG.ungraded;
   const equity   = lead.equity_percent != null ? Math.round(lead.equity_percent) : null;
   const yrs      = lead.years_owned    != null ? Math.round(lead.years_owned)    : null;
   const typeLabel = (lead.property_type ?? "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
   const address  = [lead.property_address, lead.property_city, lead.property_state].filter(Boolean).join(", ");
   const minedAt  = new Date(lead.created_at).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  // Melissa / enrichment fallbacks
+  const phone = lead.phone ?? lead.enrichment_data?.phones?.[0] ?? null;
+  const email = lead.email ?? lead.enrichment_data?.emails?.[0] ?? null;
+
+  // Stage tracking
+  const currentStage = (lead.stage ?? "new") as StageKey;
+  const stageIdx     = STAGE_STEPS.findIndex(s => s.key === currentStage);
+  const activeIdx    = stageIdx >= 0 ? stageIdx : 0;
+  const nextStep     = STAGE_STEPS[activeIdx]?.next ?? "Review lead details";
+
+  const summary = buildLeadSummary(lead);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -261,7 +322,7 @@ function LeadDrawer({ lead, onClose }: { lead: PropertyLead; onClose: () => void
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
       {/* Panel */}
       <div
-        className="fixed right-0 top-0 bottom-0 z-50 w-[380px] flex flex-col overflow-hidden shadow-2xl"
+        className="fixed right-0 top-0 bottom-0 z-50 w-[420px] flex flex-col overflow-hidden shadow-2xl"
         style={{ background: CAVE.deep, borderLeft: `1px solid ${CAVE.stoneMid}` }}
       >
         {/* Header */}
@@ -290,23 +351,103 @@ function LeadDrawer({ lead, onClose }: { lead: PropertyLead; onClose: () => void
           {/* Street View */}
           {address && <DrawerStreetView address={address} />}
 
+          {/* AI Summary — collapsible */}
+          <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${CAVE.stoneEdge}` }}>
+            <button
+              onClick={() => setSummaryOpen(v => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-white/[0.02]"
+              style={{ background: CAVE.stoneDeep }}
+            >
+              <span className="flex items-center gap-2 text-[11px] font-semibold text-neutral-400">
+                <Bot className="w-3.5 h-3.5" style={{ color: GEM.green }} />
+                AI Lead Summary
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-neutral-600 transition-transform flex-shrink-0" style={{ transform: summaryOpen ? "rotate(180deg)" : "none" }} />
+            </button>
+            {summaryOpen && (
+              <div className="px-4 pb-4 pt-3 space-y-2.5" style={{ background: CAVE.stoneDeep, borderTop: `1px solid ${CAVE.stoneEdge}` }}>
+                {summary.split("\n\n").map((para, i) => (
+                  <p key={i} className="text-[11.5px] leading-relaxed text-neutral-400">{para}</p>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Outreach progress */}
+          <div className="rounded-xl p-4 space-y-3" style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneEdge}` }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5">
+              <TrendingUp className="w-3 h-3" />Outreach Progress
+            </p>
+            {/* Step tracker */}
+            <div className="flex items-center gap-0">
+              {STAGE_STEPS.map((step, i) => {
+                const done   = i < activeIdx;
+                const active = i === activeIdx;
+                const last   = i === STAGE_STEPS.length - 1;
+                return (
+                  <div key={step.key} className="flex items-center flex-1 min-w-0">
+                    <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                      <div
+                        className="w-5 h-5 rounded-full flex items-center justify-center"
+                        style={{
+                          background: done ? GEM.green : active ? `${GEM.green}20` : "rgba(255,255,255,0.05)",
+                          border: `1.5px solid ${done ? GEM.green : active ? GEM.green : "rgba(255,255,255,0.1)"}`,
+                        }}
+                      >
+                        {done
+                          ? <CheckCircle2 className="w-3 h-3" style={{ color: CAVE.deep }} />
+                          : active
+                            ? <Circle className="w-2 h-2" style={{ color: GEM.green }} />
+                            : <Circle className="w-2 h-2 text-neutral-700" />
+                        }
+                      </div>
+                      <span className="text-[8px] text-neutral-600 text-center leading-tight whitespace-nowrap" style={{ color: active ? GEM.green : done ? "rgba(0,255,136,0.5)" : undefined }}>
+                        {step.label}
+                      </span>
+                    </div>
+                    {!last && (
+                      <div className="flex-1 h-px mx-1 mb-4" style={{ background: i < activeIdx ? GEM.green : "rgba(255,255,255,0.07)" }} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Next step */}
+            <div className="flex items-start gap-2 px-3 py-2.5 rounded-lg" style={{ background: `${GEM.green}08`, border: `1px solid ${GEM.green}18` }}>
+              <ArrowRight className="w-3 h-3 mt-0.5 flex-shrink-0" style={{ color: GEM.green }} />
+              <div>
+                <p className="text-[9px] font-bold uppercase tracking-wider mb-0.5" style={{ color: GEM.green }}>Next Step</p>
+                <p className="text-[11px] text-neutral-300">{nextStep}</p>
+              </div>
+            </div>
+            {/* Automate CTA */}
+            <button
+              onClick={onNavigateToAutomations}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg text-[11px] font-semibold transition-colors hover:opacity-90"
+              style={{ background: `${GEM.green}15`, border: `1px solid ${GEM.green}30`, color: GEM.green }}
+            >
+              <Workflow className="w-3.5 h-3.5" />
+              Add to Automation Sequence
+            </button>
+          </div>
+
           {/* Contact info */}
           <div className="rounded-xl p-4 space-y-3" style={{ background: CAVE.stoneDeep, border: `1px solid ${CAVE.stoneEdge}` }}>
             <p className="text-[10px] font-semibold uppercase tracking-wider text-neutral-600 flex items-center gap-1.5">
               <User className="w-3 h-3" />Contact Info
             </p>
-            {lead.phone ? (
-              <a href={`tel:${lead.phone}`} className="flex items-center gap-2 text-[12px] transition-colors hover:opacity-80" style={{ color: GEM.green }}>
+            {phone ? (
+              <a href={`tel:${phone}`} className="flex items-center gap-2 text-[12px] transition-colors hover:opacity-80" style={{ color: GEM.green }}>
                 <Phone className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>{lead.phone}</span>
+                <span>{phone}</span>
               </a>
             ) : (
               <p className="text-[11px] text-neutral-600 flex items-center gap-2"><Phone className="w-3.5 h-3.5" />No phone on file</p>
             )}
-            {lead.email ? (
-              <a href={`mailto:${lead.email}`} className="flex items-center gap-2 text-[12px] transition-colors hover:opacity-80" style={{ color: GEM.green }}>
+            {email ? (
+              <a href={`mailto:${email}`} className="flex items-center gap-2 text-[12px] transition-colors hover:opacity-80" style={{ color: GEM.green }}>
                 <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                <span className="truncate">{lead.email}</span>
+                <span className="truncate">{email}</span>
               </a>
             ) : (
               <p className="text-[11px] text-neutral-600 flex items-center gap-2"><Mail className="w-3.5 h-3.5" />No email on file</p>
@@ -369,7 +510,7 @@ function LeadDrawer({ lead, onClose }: { lead: PropertyLead; onClose: () => void
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function LeadsPanel({ isActive }: { isActive: boolean }) {
+export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavigate?: (index: number) => void }) {
   const [leadType,     setLeadType]    = useState<LeadType>("property");
   const [bizLeads,     setBizLeads]    = useState<BusinessLead[]>([]);
   const [propLeads,    setPropLeads]   = useState<PropertyLead[]>([]);
@@ -831,7 +972,11 @@ export function LeadsPanel({ isActive }: { isActive: boolean }) {
 
       {/* Lead detail drawer */}
       {selectedLead && (
-        <LeadDrawer lead={selectedLead} onClose={() => setSelectedLead(null)} />
+        <LeadDrawer
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onNavigateToAutomations={() => { setSelectedLead(null); onNavigate?.(4); }}
+        />
       )}
     </div>
   );

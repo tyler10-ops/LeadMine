@@ -130,6 +130,61 @@ function SourceBadge({ source }: { source: SignalLead["signal_source"] }) {
   );
 }
 
+// ── Score gauge with centered needle ─────────────────────────────────────────
+
+function ScoreGauge({ score, color }: { score: number; color: string }) {
+  const cx = 32, cy = 32, r = 24;
+  const circ = Math.PI * r; // half-circle circumference
+  const dashOffset = circ * (1 - score / 100);
+
+  // Needle: angle in math coords (180° = left at score 0, 0° = right at score 100)
+  const angleDeg = 180 - (score / 100) * 180;
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const needleLen = 18;
+  const nx = cx + needleLen * Math.cos(angleRad);
+  const ny = cy - needleLen * Math.sin(angleRad);
+
+  return (
+    <div className="flex flex-col items-center">
+      <div className="relative w-16 h-9 overflow-visible">
+        <svg viewBox="0 0 64 36" className="w-full h-full overflow-visible">
+          {/* Background arc (top half, left→right) */}
+          <path
+            d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`}
+            fill="none"
+            stroke="rgba(255,255,255,0.07)"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+          />
+          {/* Filled arc based on score */}
+          <path
+            d={`M ${cx - r},${cy} A ${r},${r} 0 0,1 ${cx + r},${cy}`}
+            fill="none"
+            stroke={color}
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeDasharray={circ}
+            strokeDashoffset={dashOffset}
+            style={{ filter: `drop-shadow(0 0 3px ${color}88)` }}
+          />
+          {/* Needle */}
+          <line
+            x1={cx} y1={cy}
+            x2={nx} y2={ny}
+            stroke={color}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+          {/* Center pivot */}
+          <circle cx={cx} cy={cy} r="2" fill={color} />
+        </svg>
+      </div>
+      <span className="text-[18px] font-black tabular-nums leading-none -mt-1" style={{ color }}>{score}</span>
+      <span className="text-[8px] text-neutral-700 uppercase tracking-widest mt-0.5">Sell %</span>
+    </div>
+  );
+}
+
 // ── Signal card ───────────────────────────────────────────────────────────────
 
 function SignalCard({
@@ -146,22 +201,8 @@ function SignalCard({
   return (
     <div className="group relative bg-[#0a0a0a] border border-white/[0.06] rounded-xl p-5 hover:border-white/[0.12] transition-all hover:shadow-[0_0_24px_rgba(0,0,0,0.6)] flex gap-5">
       {/* Score gauge */}
-      <div className="flex-shrink-0 flex flex-col items-center justify-center w-16">
-        <div
-          className="text-[28px] font-black tabular-nums leading-none"
-          style={{ color }}
-        >
-          {score}
-        </div>
-        <div className="text-[9px] text-neutral-700 uppercase tracking-widest mt-0.5 text-center">
-          {isSocial ? "Intent" : "Sell %"}
-        </div>
-        <div className="w-12 h-1 bg-white/[0.06] rounded-full mt-2 overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all"
-            style={{ width: `${score}%`, backgroundColor: color }}
-          />
-        </div>
+      <div className="flex-shrink-0 flex items-center justify-center w-16">
+        <ScoreGauge score={score} color={color} />
       </div>
 
       {/* Divider */}

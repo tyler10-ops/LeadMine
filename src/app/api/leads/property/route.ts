@@ -40,6 +40,7 @@ export async function GET(request: NextRequest) {
         stage,
         phone,
         email,
+        enrichment_data,
         created_at
       `)
       .eq("data_source", source)

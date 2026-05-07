@@ -322,7 +322,7 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
             />
           </div>
           <div className={cn("absolute inset-0", activeIndex === 2 ? "block" : "hidden")}>
-            <LeadsPanel isActive={activeIndex === 2} />
+            <LeadsPanel isActive={activeIndex === 2} onNavigate={setActiveIndex} />
           </div>
           <div className={cn("absolute inset-0", activeIndex === 3 ? "block" : "hidden")}>
             <PortfolioPanel isActive={activeIndex === 3} />
