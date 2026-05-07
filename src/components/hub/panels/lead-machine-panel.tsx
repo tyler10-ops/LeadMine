@@ -34,6 +34,7 @@ import {
 import { MiningPanel, GlowBorder } from "@/components/ui/mining-panel";
 import { GemShard } from "@/components/ui/embedded-gem";
 import { Gem } from "@/components/ui/gem";
+import { GemGrade as GemGradeBadge } from "@/components/ui/gem-grade";
 import { UpgradePrompt } from "@/components/ui/upgrade-prompt";
 import { canAccess, getLimits } from "@/lib/plan-limits";
 import type { Plan } from "@/lib/plan-limits";
@@ -591,6 +592,54 @@ function StreetViewCarousel({ address }: { address: string }) {
   );
 }
 
+// ── Grade Legend ──────────────────────────────────────────────────────────────
+
+const SIGNAL_BREAKDOWN = [
+  { label: "Absentee owner",         points: "+25", color: GEM.green  },
+  { label: "Owned 20+ years",        points: "+20", color: GEM.green  },
+  { label: "Equity > 70%",           points: "+20", color: GEM.green  },
+  { label: "Equity > 40%",           points: "+15", color: GEM.yellow },
+  { label: "Owned 10+ years",        points: "+15", color: GEM.yellow },
+  { label: "Stale transaction 5+ yr", points: "+10", color: GEM.yellow },
+  { label: "Recently sold (<2 yr)",  points: "−35", color: GEM.red   },
+  { label: "Incomplete record",      points: "−10", color: GEM.red   },
+] as const;
+
+function GradeLegend() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-xl border overflow-hidden" style={{ borderColor: CAVE.stoneEdge, background: CAVE.stoneDeep }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-3 py-2 text-left"
+      >
+        <span className="text-[11px] font-semibold text-neutral-400">How gems are graded</span>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-bold" style={{ color: GEM.green }}>Elite ≥65</span>
+          <span className="text-[10px] font-bold" style={{ color: GEM.yellow }}>Refined ≥35</span>
+          <span className="text-[10px] font-bold" style={{ color: GEM.red }}>Rock &lt;35</span>
+          <ChevronDown className="w-3 h-3 text-neutral-600 transition-transform" style={{ transform: open ? "rotate(180deg)" : "none" }} />
+        </div>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 border-t" style={{ borderColor: CAVE.stoneEdge }}>
+          <p className="text-[10px] text-neutral-600 mt-2 mb-2">
+            Each property is scored 0–100 based on seller motivation signals from county assessor data.
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            {SIGNAL_BREAKDOWN.map(s => (
+              <div key={s.label} className="flex items-center justify-between gap-2">
+                <span className="text-[10px] text-neutral-500">{s.label}</span>
+                <span className="text-[10px] font-bold tabular-nums" style={{ color: s.color }}>{s.points} pts</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Property Lead Card ─────────────────────────────────────────────────────────
 
 function PropertyLeadCard({
@@ -658,12 +707,7 @@ function PropertyLeadCard({
               {lead.aiFlag && <Zap className="w-3 h-3 flex-shrink-0" style={{ color: GEM.green }} />}
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span
-                className="text-[10px] font-bold px-2 py-0.5 rounded-md"
-                style={{ color: gradeConfig.color, background: gradeConfig.bg }}
-              >
-                {gradeConfig.label}
-              </span>
+              <GemGradeBadge grade={lead.grade} size="sm" />
               <span className="text-[14px] font-bold tabular-nums" style={{ color: scoreColor }}>
                 {lead.score}
               </span>
@@ -2426,6 +2470,9 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
               </button>
             )}
           </div>
+
+          {/* Grading Legend */}
+          <GradeLegend />
 
           {/* Grade summary — clickable filters */}
           <div className="flex items-center gap-2">

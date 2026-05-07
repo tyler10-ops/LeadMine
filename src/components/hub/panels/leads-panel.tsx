@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { GEM, CAVE } from "@/lib/cave-theme";
+import { GemGrade as GemGradeBadge } from "@/components/ui/gem-grade";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -62,17 +63,6 @@ const GRADE_CFG: Record<GemGrade, { label: string; color: string; icon: React.Re
   ungraded: { label: "—",       color: "#374151",  icon: <Pickaxe className="w-3 h-3" /> },
 };
 
-function GradeBadge({ grade }: { grade: GemGrade }) {
-  const cfg = GRADE_CFG[grade] ?? GRADE_CFG.ungraded;
-  return (
-    <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap"
-      style={{ color: cfg.color, background: `${cfg.color}14`, border: `1px solid ${cfg.color}28` }}
-    >
-      {cfg.icon}{cfg.label}
-    </span>
-  );
-}
 
 function Chip({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -115,6 +105,69 @@ const GRADE_FILTERS = [
   { value: "refined",label: "Refined" },
   { value: "rock",   label: "Rock"    },
 ];
+
+const SIGNAL_POINTS = [
+  { label: "Absentee owner",          points: "+25", color: GEM.green  },
+  { label: "Owned 20+ years",         points: "+20", color: GEM.green  },
+  { label: "Equity > 70%",            points: "+20", color: GEM.green  },
+  { label: "Equity > 40%",            points: "+15", color: GEM.yellow },
+  { label: "Owned 10+ years",         points: "+15", color: GEM.yellow },
+  { label: "Stale 5+ years",          points: "+10", color: GEM.yellow },
+  { label: "Recently sold (<2 yr)",   points: "−35", color: "#FF3B30"  },
+  { label: "Incomplete record",       points: "−10", color: "#FF3B30"  },
+] as const;
+
+function GradeThHeader({ sortKey, current, dir, onSort }: {
+  sortKey: SortKey; current: SortKey; dir: "asc" | "desc"; onSort: (k: SortKey) => void;
+}) {
+  const [tip, setTip] = useState(false);
+  const active = current === sortKey;
+  return (
+    <th className="px-3 py-2.5 text-left whitespace-nowrap">
+      <div className="flex items-center gap-1.5">
+        <button className="flex items-center gap-1 cursor-pointer select-none group" onClick={() => onSort(sortKey)}>
+          <span className={cn("text-[10px] font-semibold uppercase tracking-wider transition-colors", active ? "text-[#00FF88]" : "text-neutral-600 group-hover:text-neutral-400")}>
+            Grade
+          </span>
+          {active
+            ? dir === "desc" ? <ChevronDown className="w-3 h-3 text-[#00FF88]" /> : <ChevronUp className="w-3 h-3 text-[#00FF88]" />
+            : <ChevronDown className="w-3 h-3 text-neutral-800 group-hover:text-neutral-600" />}
+        </button>
+        <div className="relative">
+          <button
+            onClick={() => setTip(v => !v)}
+            className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold transition-colors"
+            style={{ background: tip ? `${GEM.green}20` : "rgba(255,255,255,0.06)", color: tip ? GEM.green : "#525252", border: `1px solid ${tip ? GEM.green + "40" : "transparent"}` }}
+          >
+            ?
+          </button>
+          {tip && (
+            <div
+              className="absolute left-0 top-full mt-1.5 z-50 rounded-xl border p-3 w-64"
+              style={{ background: "#0d0d18", borderColor: "rgba(255,255,255,0.08)", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}
+            >
+              <p className="text-[10px] font-bold text-neutral-300 mb-1">How Gems Are Graded</p>
+              <p className="text-[9px] text-neutral-600 mb-2.5">Score 0–100 based on seller motivation signals from county assessor data.</p>
+              <div className="flex gap-3 mb-3 text-[9px] font-bold">
+                <span style={{ color: GEM.green }}>Elite ≥65 pts</span>
+                <span style={{ color: GEM.yellow }}>Refined ≥35 pts</span>
+                <span style={{ color: "#FF3B30" }}>Rock &lt;35 pts</span>
+              </div>
+              <div className="space-y-1.5">
+                {SIGNAL_POINTS.map(s => (
+                  <div key={s.label} className="flex items-center justify-between">
+                    <span className="text-[9px] text-neutral-500">{s.label}</span>
+                    <span className="text-[9px] font-bold tabular-nums" style={{ color: s.color }}>{s.points} pts</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </th>
+  );
+}
 
 // ── Street View Carousel (drawer) ─────────────────────────────────────────────
 
@@ -587,7 +640,7 @@ export function LeadsPanel({ isActive }: { isActive: boolean }) {
                 <Th label="City" />
                 <Th label="County" />
                 <Th label="Type" />
-                <SortTh label="Grade"          sortKey="gem_grade"  current={sortKey} dir={sortDir} onSort={handleSort} />
+                <GradeThHeader sortKey="gem_grade" current={sortKey} dir={sortDir} onSort={handleSort} />
                 <SortTh label="Score"          sortKey="score"      current={sortKey} dir={sortDir} onSort={handleSort} />
                 <Th label="Equity %" />
                 <Th label="Yrs Owned" />
@@ -638,7 +691,7 @@ export function LeadsPanel({ isActive }: { isActive: boolean }) {
 
                     {/* Grade */}
                     <td className="px-3 py-2.5">
-                      <GradeBadge grade={lead.gem_grade} />
+                      <GemGradeBadge grade={lead.gem_grade} size="sm" />
                     </td>
 
                     {/* Score */}
@@ -720,7 +773,7 @@ export function LeadsPanel({ isActive }: { isActive: boolean }) {
                     <td className="px-3 py-2.5 max-w-[140px]">
                       <p className="text-[11px] text-neutral-500 truncate">{lead.industry ?? "—"}</p>
                     </td>
-                    <td className="px-3 py-2.5"><GradeBadge grade={lead.gem_grade} /></td>
+                    <td className="px-3 py-2.5"><GemGradeBadge grade={lead.gem_grade} size="sm" /></td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] font-bold tabular-nums w-7 text-right" style={{ color: GRADE_CFG[lead.gem_grade]?.color ?? "#6b7280" }}>{lead.score}</span>
