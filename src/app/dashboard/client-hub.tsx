@@ -306,78 +306,49 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
           </div>
         </header>
 
-        {/* Panel content — sliding */}
-        <div className="flex-1 overflow-hidden">
-          <div
-            className="flex h-full"
-            style={{
-              width: `${PANELS.length * 100}%`,
-              transform: `translateX(-${(activeIndex / PANELS.length) * 100}%)`,
-              transition: "transform 180ms cubic-bezier(0.4, 0, 0.2, 1)",
-              willChange: "transform",
-            }}
-          >
-            {PANELS.map((panel, i) => (
-              <div
-                key={panel.id}
-                className="h-full overflow-hidden"
-                style={{
-                  width: `${100 / PANELS.length}%`,
-                  transform: activeIndex === i ? "scale(1)" : "scale(0.974)",
-                  opacity: activeIndex === i ? 1 : 0.78,
-                  transition: "transform 180ms cubic-bezier(0.4, 0, 0.2, 1), opacity 150ms ease-out",
-                  transformOrigin: "center top",
-                  willChange: "transform, opacity",
-                }}
-              >
-                {/* 0: Command Center */}
-                {i === 0 && <CommandCenterPanel isActive={activeIndex === 0} realtorSlug={clientId} />}
-                {/* 1: Lead Machine — mine leads */}
-                {i === 1 && (
-                  <LeadMachinePanel
-                    isActive={activeIndex === 1}
-                    realtorSlug={clientId}
-                    onNavigate={setActiveIndex}
-                    onMiningChange={setIsMining}
-                    plan={plan}
-                    isUnlocked={hasLeadMachine}
-                  />
-                )}
-                {/* 2: Leads — review mined leads */}
-                {i === 2 && <LeadsPanel isActive={activeIndex === 2} />}
-                {/* 3: Portfolio — active listings */}
-                {i === 3 && <PortfolioPanel isActive={activeIndex === 3} />}
-                {/* 4: Automations — outreach sequences */}
-                {i === 4 && (
-                  <AutomationsPanel isActive={activeIndex === 4} realtorSlug={clientId} plan={plan} />
-                )}
-                {/* 5: AI Assets — calling agents */}
-                {i === 5 && (
-                  <AIAssetPanel
-                    isActive={activeIndex === 5}
-                    realtorSlug={clientId}
-                    plan={plan}
-                    isUnlocked={hasAIAgents}
-                  />
-                )}
-                {/* 6: Intelligence — market data */}
-                {i === 6 && (
-                  <IntelligenceAgentPanel
-                    isActive={activeIndex === 6}
-                    realtorSlug={clientId}
-                    businessName={businessName}
-                    plan={plan}
-                    isUnlocked={hasIntelligence}
-                  />
-                )}
-                {/* 7: The Cave — analytics */}
-                {i === 7 && (
-                  <div className="h-full overflow-hidden bg-black relative">
-                    <CavePanel plan={plan} isRunning={isMining} />
-                  </div>
-                )}
-              </div>
-            ))}
+        {/* Panel content */}
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          <div className={cn("absolute inset-0", activeIndex === 0 ? "block" : "hidden")}>
+            <CommandCenterPanel isActive={activeIndex === 0} realtorSlug={clientId} />
+          </div>
+          <div className={cn("absolute inset-0", activeIndex === 1 ? "block" : "hidden")}>
+            <LeadMachinePanel
+              isActive={activeIndex === 1}
+              realtorSlug={clientId}
+              onNavigate={setActiveIndex}
+              onMiningChange={setIsMining}
+              plan={plan}
+              isUnlocked={hasLeadMachine}
+            />
+          </div>
+          <div className={cn("absolute inset-0", activeIndex === 2 ? "block" : "hidden")}>
+            <LeadsPanel isActive={activeIndex === 2} />
+          </div>
+          <div className={cn("absolute inset-0", activeIndex === 3 ? "block" : "hidden")}>
+            <PortfolioPanel isActive={activeIndex === 3} />
+          </div>
+          <div className={cn("absolute inset-0", activeIndex === 4 ? "block" : "hidden")}>
+            <AutomationsPanel isActive={activeIndex === 4} realtorSlug={clientId} plan={plan} />
+          </div>
+          <div className={cn("absolute inset-0", activeIndex === 5 ? "block" : "hidden")}>
+            <AIAssetPanel
+              isActive={activeIndex === 5}
+              realtorSlug={clientId}
+              plan={plan}
+              isUnlocked={hasAIAgents}
+            />
+          </div>
+          <div className={cn("absolute inset-0", activeIndex === 6 ? "block" : "hidden")}>
+            <IntelligenceAgentPanel
+              isActive={activeIndex === 6}
+              realtorSlug={clientId}
+              businessName={businessName}
+              plan={plan}
+              isUnlocked={hasIntelligence}
+            />
+          </div>
+          <div className={cn("absolute inset-0 bg-black", activeIndex === 7 ? "block" : "hidden")}>
+            <CavePanel plan={plan} isRunning={isMining} />
           </div>
         </div>
       </div>
