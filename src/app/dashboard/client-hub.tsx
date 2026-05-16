@@ -31,6 +31,7 @@ import {
   Map as MapIcon,
   Activity,
   HelpCircle,
+  Menu,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -62,6 +63,7 @@ interface ClientHubProps {
 export function ClientHub({ clientId, businessName, industry, plan = "free" }: ClientHubProps) {
   const [activeIndex, setActiveIndex]   = useState(0);
   const [sidebarOpen, setSidebarOpen]   = useState(true);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [adminMode, setAdminMode]       = useState(false);
   const [isMining, setIsMining]         = useState(false);
   const [tutorialKey, setTutorialKey]   = useState(0);
@@ -101,10 +103,21 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-[#080808]">
 
+      {/* ── Mobile backdrop ── */}
+      {mobileNavOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
       {/* ── Collapsible Sidebar ── */}
       <aside
         className={cn(
-          "flex-shrink-0 flex flex-col h-screen bg-[#0a0a0a] border-r border-white/[0.05] transition-all duration-200 ease-in-out overflow-hidden",
+          "flex flex-col h-screen bg-[#0a0a0a] border-r border-white/[0.05] transition-all duration-200 ease-in-out overflow-hidden",
+          // Mobile: fixed overlay drawer; Desktop: flex child
+          "fixed md:relative md:flex-shrink-0 z-50 md:z-auto top-0 left-0",
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           sidebarOpen ? "w-52" : "w-14"
         )}
       >
@@ -139,7 +152,7 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
             return (
               <button
                 key={panel.id}
-                onClick={() => setActiveIndex(i)}
+                onClick={() => { setActiveIndex(i); setMobileNavOpen(false); }}
                 title={!sidebarOpen ? panel.label : undefined}
                 className={cn(
                   "w-full flex items-center rounded-lg transition-all duration-100 group",
@@ -235,9 +248,16 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
 
         {/* Top bar */}
-        <header className="flex-shrink-0 flex items-center justify-between px-5 h-[52px] border-b border-white/[0.04] bg-[#0a0a0a]/95 backdrop-blur-md z-40">
-          <div className="flex items-center gap-3">
-            <h2 className="text-[13px] font-semibold text-neutral-200">
+        <header className="flex-shrink-0 flex items-center justify-between px-3 md:px-5 h-[52px] border-b border-white/[0.04] bg-[#0a0a0a]/95 backdrop-blur-md z-40">
+          <div className="flex items-center gap-2 md:gap-3 min-w-0">
+            <button
+              onClick={() => setMobileNavOpen(true)}
+              className="md:hidden flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-200 hover:bg-white/[0.05] transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-4 h-4" />
+            </button>
+            <h2 className="text-[13px] font-semibold text-neutral-200 truncate">
               {PANELS[activeIndex].label}
             </h2>
             {adminMode && (

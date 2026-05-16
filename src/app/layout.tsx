@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CookieBanner } from "@/components/cookie-banner";
 import "./globals.css";
 
 const inter = Inter({
@@ -22,7 +23,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased bg-[#0A0A0A] text-neutral-200`}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <CookieBanner />
+        </ThemeProvider>
       </body>
     </html>
   );

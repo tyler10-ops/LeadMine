@@ -233,17 +233,39 @@ export function NotificationSettings() {
           {pushStatus === "unsupported" ? (
             <span className="text-[11px] text-neutral-600">Not supported</span>
           ) : pushSubbed ? (
-            <button
-              onClick={disablePushNotifications}
-              className="text-xs px-3 py-1.5 rounded-lg transition-colors"
-              style={{
-                background: `${GEM.green}14`,
-                border: `1px solid ${GLOW.green.border}`,
-                color: GEM.green,
-              }}
-            >
-              {pushStatus === "requesting" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Enabled ✓"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/notifications/test", { method: "POST" });
+                    const data = await res.json();
+                    if (!res.ok) alert(data.error ?? "Test failed");
+                    else alert(`Test sent to ${data.sent}/${data.total} device${data.total !== 1 ? "s" : ""}.`);
+                  } catch {
+                    alert("Test failed. See console for details.");
+                  }
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors hover:opacity-80"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: `1px solid ${CAVE.stoneEdge}`,
+                  color: "#a3a3a3",
+                }}
+              >
+                Send test
+              </button>
+              <button
+                onClick={disablePushNotifications}
+                className="text-xs px-3 py-1.5 rounded-lg transition-colors"
+                style={{
+                  background: `${GEM.green}14`,
+                  border: `1px solid ${GLOW.green.border}`,
+                  color: GEM.green,
+                }}
+              >
+                {pushStatus === "requesting" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Enabled ✓"}
+              </button>
+            </div>
           ) : (
             <button
               onClick={enablePushNotifications}
