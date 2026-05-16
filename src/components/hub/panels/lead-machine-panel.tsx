@@ -1542,6 +1542,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
   // ── Real leads from Supabase ──────────────────────────────────────────────
   const [dbLeads, setDbLeads]     = useState<PropertyLead[]>([]);
   const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsFetched, setLeadsFetched] = useState(false);
 
   const fetchLeads = async () => {
     setLeadsLoading(true);
@@ -1557,6 +1558,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
       // fall through to mock data
     } finally {
       setLeadsLoading(false);
+      setLeadsFetched(true);
     }
   };
 
@@ -2391,8 +2393,18 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
           />
         )}
 
-        {/* ── LAUNCH SCREEN — shown when no leads and idle ─────────────── */}
-        {ALL_LEADS.length === 0 && miningStatus === "idle" && (
+        {/* ── INITIAL LOADING — before first fetch completes ───────────── */}
+        {!leadsFetched && miningStatus === "idle" && (
+          <div className="flex-1 flex items-center justify-center" style={{ background: CAVE.deep }}>
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-5 h-5 rounded-full border-2 border-neutral-700 border-t-[#00FF88] animate-spin" />
+              <p className="text-[11px] text-neutral-600">Loading your leads…</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── LAUNCH SCREEN — shown when no leads after fetch + idle ───── */}
+        {leadsFetched && ALL_LEADS.length === 0 && miningStatus === "idle" && (
           <MiningLaunchScreen
             selectedZips={selectedZips}
             zipInput={zipInput}
@@ -2414,7 +2426,7 @@ export function LeadMachinePanel({ isActive, realtorSlug, onNavigate, onMiningCh
         )}
 
         {/* ── CENTER COLUMN — shown when leads exist ────────────────────── */}
-        <div className={cn("flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete" || (ALL_LEADS.length === 0 && miningStatus === "idle")) && "hidden")}>
+        <div className={cn("flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete" || !leadsFetched || (ALL_LEADS.length === 0 && miningStatus === "idle")) && "hidden")}>
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
