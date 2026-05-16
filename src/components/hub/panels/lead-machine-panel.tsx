@@ -982,8 +982,8 @@ function MiningFullscreen({
           100% { transform: translate(-50%,-50%) scale(2.8);  opacity: 0;   }
         }
         @keyframes lm-sweep {
-          from { transform: translate(-50%,-50%) rotate(0deg);   }
-          to   { transform: translate(-50%,-50%) rotate(360deg); }
+          from { transform: rotate(0deg);   }
+          to   { transform: rotate(360deg); }
         }
         @keyframes lm-glow-pulse {
           0%, 100% { opacity: 0.5; }
@@ -1015,18 +1015,25 @@ function MiningFullscreen({
         />
       ))}
 
-      {/* Sweep line */}
+      {/* Sweep line — wrapped in a 0×0 pivot anchored at exact center */}
       {status === "running" && (
         <div
           className="absolute pointer-events-none"
           style={{
-            width: 150, height: 1,
             top: "50%", left: "50%",
-            background: `linear-gradient(to right, transparent, ${GEM.green}55)`,
-            transformOrigin: "left center",
+            width: 0, height: 0,
             animation: "lm-sweep 3s linear infinite",
           }}
-        />
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: -0.5, left: 0,
+              width: 150, height: 1,
+              background: `linear-gradient(to right, transparent, ${GEM.green}55)`,
+            }}
+          />
+        </div>
       )}
 
       {/* Ambient glow */}
