@@ -28,7 +28,7 @@ import {
   PanelLeftOpen,
   Settings,
   LogOut,
-  Radio,
+  Map as MapIcon,
   Activity,
   HelpCircle,
 } from "lucide-react";
@@ -168,14 +168,14 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
           <div className="border-t border-white/[0.04] pt-3 space-y-0.5">
             <Link
               href="/dashboard/seller-radar"
-              title={!sidebarOpen ? "Signals" : undefined}
+              title={!sidebarOpen ? "Territory Map" : undefined}
               className={cn(
                 "flex items-center rounded-lg text-neutral-500 hover:text-[#00FF88] hover:bg-[#00FF88]/[0.06] transition-colors",
                 sidebarOpen ? "gap-2.5 px-3 py-2" : "justify-center px-0 py-2.5"
               )}
             >
-              <Radio className="w-4 h-4 flex-shrink-0" />
-              {sidebarOpen && <span className="text-[12px] font-medium">Signals</span>}
+              <MapIcon className="w-4 h-4 flex-shrink-0" />
+              {sidebarOpen && <span className="text-[12px] font-medium">Territory Map</span>}
             </Link>
             <Link
               href="/dashboard/activity"
