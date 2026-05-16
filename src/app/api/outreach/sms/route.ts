@@ -1,17 +1,21 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-const ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID ?? "";
-const AUTH_TOKEN  = process.env.TWILIO_AUTH_TOKEN  ?? "";
-const FROM_NUMBER = process.env.TWILIO_FROM_NUMBER ?? "";
+const ACCOUNT_SID         = process.env.TWILIO_ACCOUNT_SID         ?? "";
+const AUTH_TOKEN          = process.env.TWILIO_AUTH_TOKEN          ?? "";
+const FROM_NUMBER         = process.env.TWILIO_FROM_NUMBER         ?? "";
+const MESSAGING_SERVICE_SID = process.env.TWILIO_MESSAGING_SERVICE_SID ?? "";
 
 export async function POST(request: Request) {
   const authClient = await createServerSupabase();
   const { data: { user } } = await authClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!ACCOUNT_SID || !AUTH_TOKEN || !FROM_NUMBER) {
-    return NextResponse.json({ error: "Twilio not configured" }, { status: 503 });
+  if (!ACCOUNT_SID || !AUTH_TOKEN) {
+    return NextResponse.json({ error: "Twilio credentials missing" }, { status: 503 });
+  }
+  if (!MESSAGING_SERVICE_SID && !FROM_NUMBER) {
+    return NextResponse.json({ error: "Twilio sender missing (TWILIO_MESSAGING_SERVICE_SID or TWILIO_FROM_NUMBER)" }, { status: 503 });
   }
 
   let body: { to: string; message: string; leadId?: string };
@@ -30,7 +34,26 @@ export async function POST(request: Request) {
   const normalized = to.replace(/\D/g, "");
   const e164 = normalized.startsWith("1") ? `+${normalized}` : `+1${normalized}`;
 
+  // TCPA / A2P compliance: refuse if lead has opted out
+  if (leadId) {
+    const supabaseCheck = (await import("@/lib/supabase/server")).createServiceClient();
+    const { data: optCheck } = await supabaseCheck
+      .from("leads")
+      .select("sms_opt_out, stage")
+      .eq("id", leadId)
+      .maybeSingle();
+    if (optCheck?.sms_opt_out || optCheck?.stage === "do_not_contact") {
+      return NextResponse.json({ error: "Recipient has opted out of SMS" }, { status: 403 });
+    }
+  }
+
   try {
+    // Prefer MessagingServiceSid for A2P 10DLC campaign attribution;
+    // fall back to raw From number if the messaging service isn't configured.
+    const params = new URLSearchParams({ To: e164, Body: message });
+    if (MESSAGING_SERVICE_SID) params.set("MessagingServiceSid", MESSAGING_SERVICE_SID);
+    else params.set("From", FROM_NUMBER);
+
     const twilioRes = await fetch(
       `https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Messages.json`,
       {
@@ -39,7 +62,7 @@ export async function POST(request: Request) {
           "Authorization": `Basic ${Buffer.from(`${ACCOUNT_SID}:${AUTH_TOKEN}`).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({ From: FROM_NUMBER, To: e164, Body: message }).toString(),
+        body: params.toString(),
       }
     );
 
