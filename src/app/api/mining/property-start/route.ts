@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createServerSupabase, createServiceClient } from "@/lib/supabase/server";
 import { getPropertyMiningQueue } from "@/lib/queue/queues";
 
 /**
@@ -11,6 +11,9 @@ import { getPropertyMiningQueue } from "@/lib/queue/queues";
  *   propertyTypes?: string[] // defaults to ["single_family"]
  *   minYearsOwned?: number
  *   minEquityPct?: number
+ *   absenteeOnly?: boolean
+ *   minScore?: number          // 0-100; only save leads scoring ≥ this
+ *   excludeContacted?: boolean // skip leads already in pipeline (default true)
  * }
  */
 export async function POST(req: NextRequest) {
@@ -26,10 +29,13 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const {
-      zipCodes      = [],
-      propertyTypes = ["single_family"],
-      minYearsOwned = 0,
-      minEquityPct  = 0,
+      zipCodes         = [],
+      propertyTypes    = ["single_family"],
+      minYearsOwned    = 0,
+      minEquityPct     = 0,
+      absenteeOnly     = false,
+      minScore         = 0,
+      excludeContacted = true,
     } = body;
 
     if (!zipCodes?.length) {
@@ -42,9 +48,44 @@ export async function POST(req: NextRequest) {
     const queue = getPropertyMiningQueue();
     const job   = await queue.add(
       `property:zips:${zipCodes.join("-")}`,
-      { clientId, counties: [], state: "", propertyTypes, zipCodes, minYearsOwned, minEquityPct },
+      { clientId, counties: [], state: "", propertyTypes, zipCodes, minYearsOwned, minEquityPct, absenteeOnly, minScore, excludeContacted },
       { jobId: `prop-${clientId}-${zipCodes.join("-")}-${Date.now()}` }
     );
+
+    // Register / refresh this territory in search_areas so the scheduler auto-mines it every 6h
+    try {
+      const svc = createServiceClient();
+      const { data: existingArea } = await svc
+        .from("search_areas")
+        .select("id")
+        .eq("realtor_id", clientId)
+        .contains("zip_codes", zipCodes)
+        .maybeSingle();
+
+      if (!existingArea) {
+        await svc.from("search_areas").insert({
+          realtor_id:      clientId,
+          name:            `ZIP: ${zipCodes.join(", ")}`,
+          zip_codes:       zipCodes,
+          counties:        [],
+          state:           "",
+          property_types:  propertyTypes,
+          min_years_owned: minYearsOwned,
+          min_equity_pct:  minEquityPct,
+        });
+      } else {
+        await svc.from("search_areas").update({
+          zip_codes:       zipCodes,
+          property_types:  propertyTypes,
+          min_years_owned: minYearsOwned,
+          min_equity_pct:  minEquityPct,
+          updated_at:      new Date().toISOString(),
+        }).eq("id", existingArea.id);
+      }
+    } catch (areaErr) {
+      // Non-fatal — job is already queued
+      console.warn("[property-start] search_areas upsert failed (non-fatal):", areaErr);
+    }
 
     return NextResponse.json({
       jobId:   job.id,

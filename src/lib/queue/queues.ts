@@ -21,6 +21,9 @@ export interface PropertyMiningJobData {
   zipCodes?: string[];
   minYearsOwned?: number;
   minEquityPct?: number;
+  absenteeOnly?: boolean;
+  minScore?: number;
+  excludeContacted?: boolean;
 }
 
 /** Job data for a mining run. */

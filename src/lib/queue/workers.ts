@@ -18,7 +18,7 @@ export function createPropertyMiningWorker(): Worker<PropertyMiningJobData> {
   return new Worker<PropertyMiningJobData>(
     `${QUEUE_PREFIX}property-mining`,
     async (job: Job<PropertyMiningJobData>) => {
-      const { clientId, counties, state, propertyTypes, zipCodes = [], minYearsOwned = 0, minEquityPct = 0 } = job.data;
+      const { clientId, counties, state, propertyTypes, zipCodes = [], minYearsOwned = 0, minEquityPct = 0, absenteeOnly = false, minScore = 0, excludeContacted = true } = job.data;
       console.log(`[property-mining] Starting job ${job.id} — ${counties.join(", ")}, ${state}`);
 
       const progress: MiningProgress = {
@@ -107,19 +107,33 @@ export function createPropertyMiningWorker(): Worker<PropertyMiningJobData> {
 
       // Save all graded records — ungraded saved as rock when data is sparse
       const supabase = createServiceClient();
-      const allToSave = [...elite, ...refined, ...rock, ...ungraded];
+      let allToSave = [...elite, ...refined, ...rock, ...ungraded];
 
-      // Deduplicate against existing leads by external_property_id
+      // ── Apply realtor-selected mining filters ──────────────────────────────
+      const preFilterCount = allToSave.length;
+      if (absenteeOnly) allToSave = allToSave.filter((s) => s.isAbsenteeOwner);
+      if (minScore > 0)  allToSave = allToSave.filter((s) => s.breakdown.score >= minScore);
+      if (allToSave.length < preFilterCount) {
+        console.log(`[property-mining] Filters dropped ${preFilterCount - allToSave.length} leads (absenteeOnly=${absenteeOnly}, minScore=${minScore})`);
+      }
+
+      // Deduplicate against THIS client's existing leads by external_property_id.
+      // Scoped to client_id so the same property can surface for different
+      // realtors. When excludeContacted is on (default), any property already in
+      // this realtor's pipeline is skipped so we never re-surface worked leads.
       const externalIds = allToSave
         .map(s => s.record.external_property_id)
         .filter(Boolean) as string[];
 
-      const { data: existing } = await supabase
-        .from("leads")
-        .select("external_property_id")
-        .in("external_property_id", externalIds);
-
-      const existingIds = new Set((existing ?? []).map((r: { external_property_id: string }) => r.external_property_id));
+      let existingIds = new Set<string>();
+      if (excludeContacted && externalIds.length > 0) {
+        const { data: existing } = await supabase
+          .from("leads")
+          .select("external_property_id")
+          .eq("client_id", clientId)
+          .in("external_property_id", externalIds);
+        existingIds = new Set((existing ?? []).map((r: { external_property_id: string }) => r.external_property_id));
+      }
       const toSave = allToSave.filter(s =>
         !s.record.external_property_id || !existingIds.has(s.record.external_property_id)
       );

@@ -51,8 +51,18 @@ interface PropertyLead {
   phone: string | null;
   email: string | null;
   enrichment_data: { emails?: string[]; phones?: string[]; description?: string } | null;
+  data_source: string | null;
   created_at: string;
 }
+
+const SOURCE_LABELS: Record<string, string> = {
+  county_assessor: "County Records",
+  attom:           "ATTOM Data",
+  rentcast:        "Rentcast",
+  reddit:          "Reddit",
+  craigslist:      "Craigslist",
+  google_places:   "Google Places",
+};
 
 interface Stats { total: number; elite: number; refined: number; rock: number; today: number }
 
@@ -498,10 +508,17 @@ function LeadDrawer({ lead, onClose, onNavigateToAutomations }: {
             </div>
           )}
 
-          {/* Mined at */}
-          <p className="text-[10px] text-neutral-700 flex items-center gap-1.5">
-            <Calendar className="w-3 h-3" />Mined {minedAt}
-          </p>
+          {/* Source + Mined at */}
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-neutral-700 flex items-center gap-1.5">
+              <Calendar className="w-3 h-3" />Mined {minedAt}
+            </p>
+            {lead.data_source && (
+              <span className="text-[10px] px-2 py-0.5 rounded" style={{ color: "#60a5fa", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.15)" }}>
+                {SOURCE_LABELS[lead.data_source] ?? lead.data_source}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </>
@@ -540,7 +557,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
         const s = data.stats ?? {};
         setStats({ total: s.total ?? 0, elite: s.elite ?? 0, refined: s.refined ?? 0, rock: s.rock ?? 0, today: s.today ?? 0 });
       } else {
-        const params = new URLSearchParams({ limit: "500", source: "county_assessor" });
+        const params = new URLSearchParams({ limit: "500" });
         if (grade) params.set("grade", grade);
         const res = await fetch(`/api/leads/property?${params}`);
         if (!res.ok) throw new Error("Failed to load property leads");
@@ -673,7 +690,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
                   ? { background: `${GEM.green}18`, color: GEM.green }
                   : { background: "transparent", color: "#525252" }}
               >
-                <Home className="w-3 h-3" />Property
+                <Home className="w-3 h-3" />Sellers
               </button>
               <button
                 onClick={() => setLeadType("business")}
@@ -682,7 +699,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
                   ? { background: `${GEM.green}18`, color: GEM.green }
                   : { background: "transparent", color: "#525252" }}
               >
-                <Building2 className="w-3 h-3" />Business
+                <Building2 className="w-3 h-3" />Buyers
               </button>
             </div>
             <button
@@ -786,6 +803,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
                 <Th label="Equity %" />
                 <Th label="Yrs Owned" />
                 <Th label="Absentee" />
+                <Th label="Source" />
                 <SortTh label="Mined"          sortKey="created_at" current={sortKey} dir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
@@ -866,6 +884,13 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
                       {lead.is_absentee_owner
                         ? <span className="text-[10px] px-1.5 py-0.5 rounded font-medium" style={{ color: GEM.yellow, background: `${GEM.yellow}14` }}>Absentee</span>
                         : <span className="text-[11px] text-neutral-700">—</span>}
+                    </td>
+
+                    {/* Source */}
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: "#60a5fa", background: "rgba(96,165,250,0.08)", border: "1px solid rgba(96,165,250,0.15)" }}>
+                        {SOURCE_LABELS[lead.data_source ?? ""] ?? (lead.data_source ?? "—")}
+                      </span>
                     </td>
 
                     {/* Mined at */}
@@ -966,7 +991,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
         <span className="text-[10px] text-neutral-700">
           {displayCount.toLocaleString()} lead{displayCount !== 1 ? "s" : ""}
           {grade || query ? " (filtered)" : ""}
-          {" · "}{leadType === "property" ? "Property Owners" : "Business Leads"}
+          {" · "}{leadType === "property" ? "Sellers" : "Buyers"}
         </span>
       </div>
 

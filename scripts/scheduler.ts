@@ -118,16 +118,16 @@ async function runSchedule() {
           .update({ last_mined_at: new Date().toISOString() })
           .eq("id", area.id);
 
-        // Log to activity feed for the realtor
-        const { data: clientRow } = await supabase
-          .from("clients")
-          .select("user_id")
-          .eq("id", area.realtor_id)
-          .single();
+        // Log to activity feed — realtor_id may point to clients or realtors table
+        const { data: clientRow } = await supabase.from("clients").select("user_id").eq("id", area.realtor_id).maybeSingle();
+        const { data: realtorRow } = !clientRow
+          ? await supabase.from("realtors").select("user_id").eq("id", area.realtor_id).maybeSingle()
+          : { data: null };
+        const userId = clientRow?.user_id ?? realtorRow?.user_id;
 
-        if (clientRow?.user_id) {
+        if (userId) {
           await supabase.from("activity_log").insert({
-            user_id:    clientRow.user_id,
+            user_id:    userId,
             client_id:  area.realtor_id,
             event_type: "mine_started",
             title:      `Auto-mining started — ${area.counties.join(", ")}, ${area.state}`,

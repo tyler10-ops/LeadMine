@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const limit  = Math.min(parseInt(searchParams.get("limit") ?? "200"), 500);
-    const source = searchParams.get("source") ?? "county_assessor";
+    const source = searchParams.get("source");
     const grade  = searchParams.get("grade");
     const stage  = searchParams.get("stage");
 
@@ -41,14 +41,15 @@ export async function GET(request: NextRequest) {
         phone,
         email,
         enrichment_data,
+        data_source,
         created_at
       `)
-      .eq("data_source", source)
       .in("client_id", allowedIds)
       .order("opportunity_score", { ascending: false })
       .order("created_at", { ascending: false })
       .limit(limit);
 
+    if (source) query = query.eq("data_source", source);
     if (grade) query = query.eq("gem_grade", grade);
     if (stage) query = query.eq("stage", stage);
 
