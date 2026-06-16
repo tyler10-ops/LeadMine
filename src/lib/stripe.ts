@@ -1,7 +1,9 @@
 import Stripe from "stripe";
 
 // Shared Stripe server-side instance. Import only from API routes / server code.
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Placeholder fallback keeps the constructor from throwing during the build
+// (page-data collection) on environments without STRIPE_SECRET_KEY (e.g. Preview).
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_build_placeholder", {
   apiVersion: "2026-02-25.clover",
   typescript: true,
 });

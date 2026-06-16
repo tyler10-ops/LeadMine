@@ -7,7 +7,12 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — constructing Resend without a key throws, which would crash the
+// Next.js build (page-data collection) on environments lacking RESEND_API_KEY.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  return (_resend ??= new Resend(process.env.RESEND_API_KEY));
+}
 const FROM   = "Tyler at LeadMine <tyler@leadmine.ai>";
 const REPLY_TO = "tyler@leadmine.ai";
 
@@ -102,7 +107,7 @@ export async function processOutreachQueue(limit = 50): Promise<{
 </p>`;
 
     try {
-      const { data: mail, error: sendErr } = await resend.emails.send({
+      const { data: mail, error: sendErr } = await getResend().emails.send({
         from:     FROM,
         to:       [prospect.email!],
         replyTo:  REPLY_TO,

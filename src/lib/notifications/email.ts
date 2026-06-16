@@ -1,7 +1,12 @@
 import { Resend } from "resend";
 import type { BriefData } from "@/app/api/brief/route";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — constructing Resend without a key throws and would crash the
+// build (page-data collection) where RESEND_API_KEY isn't set.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  return (_resend ??= new Resend(process.env.RESEND_API_KEY));
+}
 const FROM = process.env.NOTIFICATION_FROM_EMAIL ?? "briefs@leadmine.app";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.leadmineapp.com";
 
@@ -211,7 +216,7 @@ export async function sendDailyBriefEmail(
     : `${newNote}LeadMine: ${brief.priorityLeads.length} priority call${brief.priorityLeads.length !== 1 ? "s" : ""} today · ${highValue} high-value`;
 
   try {
-    const { error } = await resend.emails.send({
+    const { error } = await getResend().emails.send({
       from:    FROM,
       to:      toEmail,
       subject: subjectLine,

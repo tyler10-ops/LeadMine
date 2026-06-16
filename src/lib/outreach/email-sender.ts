@@ -10,7 +10,12 @@
 import { Resend } from "resend";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const resend  = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — constructing Resend without a key throws and would crash the
+// build (page-data collection) where RESEND_API_KEY isn't set.
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  return (_resend ??= new Resend(process.env.RESEND_API_KEY));
+}
 const FROM    = process.env.RESEND_FROM_EMAIL ?? "outreach@leadmineapp.com";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.leadmineapp.com";
 
@@ -164,7 +169,7 @@ export async function processOutreachQueue(
     const subject      = draft.subject ?? `A quick note from ${realtorName}`
 
     try {
-      const { data: sent, error: sendError } = await resend.emails.send({
+      const { data: sent, error: sendError } = await getResend().emails.send({
         from:    `${realtorName} <${FROM}>`,
         to:      lead.email,
         subject,

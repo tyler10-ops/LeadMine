@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { PropertyLead, SearchArea, HeatScoreResult, HeatScoreBreakdown, HeatTier } from "@/types";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "build-placeholder" });
 
 // ── Tier thresholds ────────────────────────────────────────────────────────────
 

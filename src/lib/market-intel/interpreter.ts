@@ -15,7 +15,7 @@ import type { ProcessedSignal } from "./types";
 import type { AssetRecommendation } from "@/types";
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+  apiKey: process.env.ANTHROPIC_API_KEY ?? "build-placeholder",
 });
 
 interface InterpretationResult {

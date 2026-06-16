@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { adCopyPrompt, imagePrompt, type CreativeContext } from "./prompts";
 import type { CreativeCopySet, CreativeImageVariant } from "@/types";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "build-placeholder" });
 
 // ── Copy Generation ────────────────────────────────────────────────────────────
 

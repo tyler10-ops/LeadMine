@@ -12,7 +12,7 @@ import { initiateVapiCall, normalizePhone } from "@/lib/calling/vapi";
 import { calculateHeatScore } from "@/lib/scoring/heat-score";
 import type { PropertyLead, SearchArea } from "@/types";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? "build-placeholder" });
 const APP_URL   = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 // ── Shared lead/realtor fetch ─────────────────────────────────────────────────
