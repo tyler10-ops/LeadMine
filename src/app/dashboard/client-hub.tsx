@@ -6,6 +6,7 @@ import { CommandCenterPanel } from "@/components/hub/panels/command-center-panel
 import { LeadMachinePanel } from "@/components/hub/panels/lead-machine-panel";
 import { AIAssetPanel } from "@/components/hub/panels/ai-asset-panel";
 import { IntelligenceAgentPanel } from "@/components/hub/panels/intelligence-agent-panel";
+import { MarketPanel } from "@/components/hub/panels/market-panel";
 import { LeadsPanel } from "@/components/hub/panels/leads-panel";
 import { CavePanel } from "@/components/hub/panels/cave-panel";
 import { AutomationsPanel } from "@/components/hub/panels/automations-panel";
@@ -32,6 +33,7 @@ import {
   Activity,
   HelpCircle,
   Menu,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,6 +52,7 @@ const PANELS = [
   { id: "automations",    label: "Automations",    icon: Workflow,   shortLabel: "AUTO"  },
   { id: "ai-assets",      label: "AI Assets",      icon: Bot,        shortLabel: "AI"    },
   { id: "intelligence",   label: "Intelligence",   icon: Brain,      shortLabel: "INTEL" },
+  { id: "market",         label: "Market",         icon: TrendingUp, shortLabel: "MKT"   },
   { id: "the-cave",       label: "The Cave",       icon: Pickaxe,    shortLabel: "CAVE"  },
 ] as const;
 
@@ -367,7 +370,10 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
               isUnlocked={hasIntelligence}
             />
           </div>
-          <div className={cn("absolute inset-0 bg-black", activeIndex === 7 ? "block" : "hidden")}>
+          <div className={cn("absolute inset-0", activeIndex === 7 ? "block" : "hidden")}>
+            <MarketPanel isActive={activeIndex === 7} />
+          </div>
+          <div className={cn("absolute inset-0 bg-black", activeIndex === 8 ? "block" : "hidden")}>
             <CavePanel plan={plan} isRunning={isMining} />
           </div>
         </div>
