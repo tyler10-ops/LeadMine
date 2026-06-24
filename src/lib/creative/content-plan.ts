@@ -133,7 +133,7 @@ Return only the JSON array. No markdown fences, no explanation.
 
   const anthropic = new Anthropic();
   const response = await anthropic.messages.create({
-    model:      "claude-opus-4-5-20251101",
+    model:      "claude-opus-4-8",
     max_tokens: 6000,
     system:     systemPrompt,
     messages: [{ role: "user", content: userPrompt }],

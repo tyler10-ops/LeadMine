@@ -67,7 +67,7 @@ Agent: ${agentName} (${agentMarket})
 Start with "Subject: [compelling subject line]" on line 1, blank line, then body under 150 words. Sign off with the agent's name. Professional tone. No filler phrases.`;
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 600,
     system: systemPrompt,
     messages: [{ role: "user", content: prompt }],
@@ -88,7 +88,7 @@ Start with "Subject: [compelling subject line]" on line 1, blank line, then body
       subject,
       body,
       status:     "queued_to_send",
-      ai_model:   "claude-sonnet-4-20250514",
+      ai_model:   "claude-sonnet-4-6",
     })
     .select("id")
     .single();

@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const { prompt, systemPrompt } = buildPrompt(typedLead, realtor, channel, tone);
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 600,
       system: systemPrompt,
       messages: [{ role: "user", content: prompt }],
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         channel,
         tone,
         status:     "draft",
-        ai_model:   "claude-sonnet-4-20250514",
+        ai_model:   "claude-sonnet-4-6",
       })
       .select()
       .single();
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
     if (insertError) {
       // Return generated content even if save fails
       return NextResponse.json({
-        draft: { id: null, realtor_id: realtor.id, lead_id: leadId, subject, body: messageBody, channel, tone, status: "draft", ai_model: "claude-sonnet-4-20250514", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
+        draft: { id: null, realtor_id: realtor.id, lead_id: leadId, subject, body: messageBody, channel, tone, status: "draft", ai_model: "claude-sonnet-4-6", created_at: new Date().toISOString(), updated_at: new Date().toISOString() },
       });
     }
 

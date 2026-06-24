@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
 
     // Call Claude
     const response = await anthropic.messages.create({
-      model:      "claude-opus-4-5-20251101",
+      model:      "claude-opus-4-8",
       max_tokens: 1024,
       system:     buildSystemPrompt(ctx),
       messages:   messages.map(m => ({ role: m.role, content: m.content })),

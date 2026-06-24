@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
     );
 
     const response = await anthropic.messages.create({
-      model:      "claude-sonnet-4-20250514",
+      model:      "claude-sonnet-4-6",
       max_tokens: 800,
       system,
       messages:   [{ role: "user", content: userPrompt }],
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           subject,
           body:       contentBody,
           status:     "draft",
-          ai_model:   "claude-sonnet-4-20250514",
+          ai_model:   "claude-sonnet-4-6",
         })
         .select()
         .single();
@@ -197,7 +197,7 @@ export async function POST(request: NextRequest) {
       body:     contentBody,
       fullText: text,
       draft,
-      model:    "claude-sonnet-4-20250514",
+      model:    "claude-sonnet-4-6",
     });
   } catch (err) {
     console.error("[automation/content]", err);
