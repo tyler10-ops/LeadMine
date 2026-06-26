@@ -499,12 +499,15 @@ function LeadDrawer({ lead, onClose, onNavigateToAutomations }: {
 
           {/* Signal flags */}
           {lead.signal_flags && lead.signal_flags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {lead.signal_flags.map(flag => (
-                <span key={flag} className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: `${GEM.green}10`, border: `1px solid ${GEM.green}20`, color: `${GEM.green}99` }}>
-                  {flag.replace(/_/g, " ")}
-                </span>
-              ))}
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-neutral-600 mb-1.5">Why this grade</p>
+              <div className="flex flex-wrap gap-1.5">
+                {lead.signal_flags.map(flag => (
+                  <span key={flag} className="px-2 py-0.5 rounded-full text-[10px]" style={{ background: `${GEM.green}10`, border: `1px solid ${GEM.green}20`, color: `${GEM.green}99` }}>
+                    {flag.replace(/_/g, " ")}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 

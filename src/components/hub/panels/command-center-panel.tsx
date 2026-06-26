@@ -87,9 +87,10 @@ function SectionHeader({ children, gemVariant }: { children: React.ReactNode; ge
 interface CommandCenterPanelProps {
   isActive: boolean;
   realtorSlug?: string;
+  onNavigate?: (index: number) => void;
 }
 
-export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
+export function CommandCenterPanel({ isActive, onNavigate }: CommandCenterPanelProps) {
   const [data, setData]                   = useState<CommandCenterData | null>(null);
   const [loading, setLoading]             = useState(true);
   const [signals, setSignals]             = useState<LiveSignal[]>(FALLBACK_SIGNALS);
@@ -327,7 +328,8 @@ export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
               </div>
               <a
                 href="/dashboard/leads"
-                className="flex items-center gap-1 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors"
+                onClick={(e) => { if (onNavigate) { e.preventDefault(); onNavigate(2); } }}
+                className="flex items-center gap-1 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer"
               >
                 View all <ArrowUpRight className="w-3 h-3" />
               </a>
@@ -379,7 +381,7 @@ export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
                 <MessageSquare className="w-3.5 h-3.5 text-neutral-600" />
                 <p className="text-[12px] font-semibold text-neutral-300">Outreach This Month</p>
               </div>
-              <a href="/dashboard/leads" className="flex items-center gap-1 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
+              <a href="/dashboard/leads" onClick={(e) => { if (onNavigate) { e.preventDefault(); onNavigate(2); } }} className="flex items-center gap-1 text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
                 View leads <ArrowUpRight className="w-3 h-3" />
               </a>
             </div>
@@ -458,7 +460,7 @@ export function CommandCenterPanel({ isActive }: CommandCenterPanelProps) {
                   {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
-              <a href="/dashboard/intelligence" className="text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors">
+              <a href="/dashboard/intelligence" onClick={(e) => { if (onNavigate) { e.preventDefault(); onNavigate(6); } }} className="text-[11px] text-neutral-600 hover:text-neutral-400 transition-colors cursor-pointer">
                 Full intel →
               </a>
             </div>

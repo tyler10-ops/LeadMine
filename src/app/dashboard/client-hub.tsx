@@ -332,7 +332,7 @@ export function ClientHub({ clientId, businessName, industry, plan = "free" }: C
         {/* Panel content */}
         <div className="flex-1 min-h-0 relative overflow-hidden">
           <div className={cn("absolute inset-0", activeIndex === 0 ? "block" : "hidden")}>
-            <CommandCenterPanel isActive={activeIndex === 0} realtorSlug={clientId} />
+            <CommandCenterPanel isActive={activeIndex === 0} realtorSlug={clientId} onNavigate={setActiveIndex} />
           </div>
           <div className={cn("absolute inset-0", activeIndex === 1 ? "block" : "hidden")}>
             <LeadMachinePanel

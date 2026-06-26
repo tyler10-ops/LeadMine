@@ -180,6 +180,7 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
   const [automationList, setAutomations] = useState<ApiAutomation[]>([]);
   const [totals, setTotals]             = useState<AnalyticsTotals | null>(null);
   const [loading, setLoading]           = useState(false);
+  const [typeFilter, setTypeFilter]     = useState<string>("all");
 
   useEffect(() => {
     if (!isActive) return;
@@ -271,11 +272,12 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
               return (
                 <div
                   key={f.type}
+                  onClick={() => setTypeFilter(f.type)}
                   className="flex items-center justify-between px-3 py-2 rounded-xl cursor-pointer transition-all"
                   style={{
-                    background: isAll ? "rgba(255,255,255,0.07)" : CAVE.surface2,
-                    border: isAll
-                      ? "1px solid rgba(255,255,255,0.1)"
+                    background: typeFilter === f.type ? "rgba(0,255,136,0.10)" : CAVE.surface2,
+                    border: typeFilter === f.type
+                      ? `1px solid ${GEM.green}33`
                       : `1px solid ${CAVE.stoneMid}`,
                   }}
                 >
@@ -381,8 +383,9 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
                 </p>
               </MiningPanel>
             ))}
-            <button
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12px] text-neutral-500 hover:text-neutral-300 transition-colors"
+            <a
+              href="/dashboard/assets/new"
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12px] text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
               style={{
                 background: "rgba(255,255,255,0.02)",
                 border: `1px dashed ${CAVE.stone}`,
@@ -390,7 +393,7 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
             >
               <Plus className="w-3 h-3" />
               New Deployment
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -441,7 +444,7 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
           </div>
         )}
         <div className="grid grid-cols-2 gap-3">
-          {assets.map((asset) => {
+          {assets.filter((a) => typeFilter === "all" || a.type === typeFilter).map((asset) => {
             const Icon = typeIcons[asset.type] || Phone;
             const gemKey = (typeGem[asset.type] ?? "yellow") as "green" | "yellow";
             const scoreGem = scoreToGem(asset.performance_score);
