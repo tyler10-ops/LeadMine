@@ -195,6 +195,22 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
       .finally(() => setLoading(false));
   }, [isActive]);
 
+  // Toggle an asset between active/paused — optimistic UI + PATCH, revert on failure
+  const toggleAsset = async (asset: ApiAsset) => {
+    const next = asset.status === "active" ? "paused" : "active";
+    setAssets((prev) => prev.map((a) => (a.id === asset.id ? { ...a, status: next } : a)));
+    try {
+      const res = await fetch(`/api/assets/${asset.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: next }),
+      });
+      if (!res.ok) throw new Error("patch failed");
+    } catch {
+      setAssets((prev) => prev.map((a) => (a.id === asset.id ? { ...a, status: asset.status } : a)));
+    }
+  };
+
   // Derived counts for sidebar filter
   const assetFilters = [
     { type: "all",     label: "All Assets",     count: assets.length, icon: null          },
@@ -456,7 +472,11 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
                       </div>
                       <div className="flex items-center gap-1.5">
                         <GemIndicator status={asset.status === "active" ? "active" : "paused"} size="xs" />
-                        <button className="w-5 h-5 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors" onClick={(e) => e.preventDefault()}>
+                        <button
+                          className="w-5 h-5 rounded-lg flex items-center justify-center hover:bg-white/5 transition-colors cursor-pointer"
+                          title={asset.status === "active" ? "Pause agent" : "Activate agent"}
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleAsset(asset); }}
+                        >
                           {asset.status === "active" ? <Pause className="w-3 h-3 text-neutral-500" /> : <Play className="w-3 h-3 text-neutral-500" />}
                         </button>
                       </div>

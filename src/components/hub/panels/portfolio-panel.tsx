@@ -501,12 +501,13 @@ export function PortfolioPanel({ isActive }: { isActive: boolean }) {
         <span className="text-[10px] text-neutral-700">
           {filtered.length} listing{filtered.length !== 1 ? "s" : ""}{statusFilter ? " (filtered)" : ""}
         </span>
-        <button
-          className="ml-auto flex items-center gap-1 text-[10px] transition-colors hover:opacity-80"
-          style={{ color: GEM.green }}
+        <span
+          className="ml-auto flex items-center gap-1 text-[10px]"
+          style={{ color: "#525252" }}
+          title="MLS auto-sync is on the roadmap — listings are added manually for now"
         >
-          Connect MLS<ChevronRight className="w-3 h-3" />
-        </button>
+          MLS sync — coming soon
+        </span>
       </div>
 
       {showAdd && <AddListingModal onClose={() => setShowAdd(false)} onSaved={handleSaved} />}

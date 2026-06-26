@@ -227,6 +227,7 @@ function CallOverlay({
 }) {
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [note, setNote] = useState("");
+  const [muted, setMuted] = useState(false);
 
   const handleHangUp = () => {
     onAdvanceStage("contacted");
@@ -299,10 +300,15 @@ function CallOverlay({
         <div className="flex items-center justify-center gap-4 px-6 pt-2 pb-6">
           {/* Mute placeholder */}
           <button
-            className="w-12 h-12 rounded-full flex items-center justify-center text-[11px] font-semibold text-neutral-400 transition-colors hover:bg-white/[0.06]"
-            style={{ border: `1px solid ${CAVE.stoneMid}` }}
+            onClick={() => setMuted((m) => !m)}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-[11px] font-semibold transition-colors hover:bg-white/[0.06]"
+            style={{
+              border: `1px solid ${muted ? GEM.red + "55" : CAVE.stoneMid}`,
+              color: muted ? GEM.red : "#a3a3a3",
+              background: muted ? `${GEM.red}12` : "transparent",
+            }}
           >
-            Mute
+            {muted ? "Muted" : "Mute"}
           </button>
 
           {/* Hang up */}
