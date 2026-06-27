@@ -1,5 +1,7 @@
 "use client";
 
+import { sanitizeHtml } from "@/lib/sanitize";
+
 import { useEffect, useState } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -175,7 +177,7 @@ export default function ContentPage() {
               </div>
               <div
                 className="prose prose-neutral prose-sm max-w-none [&_p]:text-neutral-600 [&_p]:leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: article.body }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.body) }}
               />
               <p className="text-xs text-neutral-400 mt-4">
                 {new Date(article.created_at).toLocaleDateString("en-US", {

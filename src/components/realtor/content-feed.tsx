@@ -1,4 +1,5 @@
 import type { Content } from "@/types";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 interface ContentFeedProps {
   articles: Content[];
@@ -33,7 +34,7 @@ export function ContentFeed({ articles }: ContentFeedProps) {
             </h3>
             <div
               className="prose prose-neutral prose-sm max-w-none [&_p]:text-neutral-600 [&_p]:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: article.body }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.body) }}
             />
           </article>
         ))}

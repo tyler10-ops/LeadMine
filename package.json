@@ -22,6 +22,7 @@
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "ioredis": "^5.9.3",
+    "isomorphic-dompurify": "^3.18.0",
     "lucide-react": "^0.563.0",
     "lumaai": "^1.19.1",
     "maplibre-gl": "^4.7.1",

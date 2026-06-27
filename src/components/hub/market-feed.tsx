@@ -1,5 +1,7 @@
 "use client";
 
+import { sanitizeHtml } from "@/lib/sanitize";
+
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
@@ -143,7 +145,7 @@ export function MarketFeed({ news }: MarketFeedProps) {
                   {item.body && (
                     <div
                       className="mt-4 text-sm text-neutral-500 leading-relaxed [&_p]:mb-3"
-                      dangerouslySetInnerHTML={{ __html: item.body }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.body) }}
                     />
                   )}
 

@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     const region = searchParams.get("region");
     const direction = searchParams.get("direction");
     const highImpactOnly = searchParams.get("highImpactOnly") === "true";
-    const search = searchParams.get("search");
+    // Strip PostgREST filter metacharacters to prevent .or() filter injection.
+    const search = searchParams.get("search")?.replace(/[,()*:%\\]/g, "").trim().slice(0, 100) || null;
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
     const offset = parseInt(searchParams.get("offset") || "0");
 

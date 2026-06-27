@@ -5,11 +5,17 @@ import type { RawSignalInput } from "@/lib/market-intel/types";
 
 /**
  * POST /api/signals/ingest — Ingest one or more raw signals.
- * Protected: requires service-role or API key in production.
- * For MVP, accepts signals directly.
+ * Gated: requires the CRON_SECRET bearer token (fail-closed). Writes to the
+ * shared market-signals feed, so it must never be open to anonymous callers.
  */
 export async function POST(request: NextRequest) {
   try {
+    const auth = request.headers.get("authorization");
+    const secret = process.env.CRON_SECRET;
+    if (!secret || auth !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const supabase = createServiceClient();
 

@@ -1,3 +1,5 @@
+import { sanitizeHtml } from "@/lib/sanitize";
+
 interface MarketPulseProps {
   content: string | null;
   city: string;
@@ -24,7 +26,7 @@ export function MarketPulse({ content, city }: MarketPulseProps) {
       </h2>
       <div
         className="prose prose-neutral prose-sm max-w-none [&_p]:text-neutral-600 [&_p]:leading-relaxed [&_p]:mb-4"
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
       />
     </section>
   );
