@@ -7,11 +7,15 @@ import {
   summarizeConversationPrompt,
 } from "@/lib/ai/prompts";
 import type { ChatMessage, ChatRequest, ChatResponse } from "@/types";
+import { rateLimited, clientIp } from "@/lib/rate-limit";
 
 const GATE_AFTER_MESSAGES = 3;
 
 export async function POST(request: NextRequest) {
   try {
+    if (rateLimited(`chat:${clientIp(request)}`, 30, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     const body: ChatRequest = await request.json();
     const { message, conversationId, realtorId } = body;
 

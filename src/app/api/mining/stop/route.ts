@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getMiningQueue } from "@/lib/queue/queues";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 /**
  * POST /api/mining/stop
@@ -9,6 +10,9 @@ import { getMiningQueue } from "@/lib/queue/queues";
  */
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createServerSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const { jobId } = await req.json();
 
     if (!jobId) {

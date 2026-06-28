@@ -3,9 +3,13 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { classifyIntent } from "@/lib/ai/claude";
 import { classifyIntentPrompt } from "@/lib/ai/prompts";
 import type { LeadCaptureRequest } from "@/types";
+import { rateLimited, clientIp } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
   try {
+    if (rateLimited(`leadcapture:${clientIp(request)}`, 10, 60_000)) {
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    }
     const body: LeadCaptureRequest = await request.json();
     const { email, name, conversationId, realtorId } = body;
 

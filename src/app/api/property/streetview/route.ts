@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase/server";
 
 const API_KEY = process.env.GOOGLE_PLACES_API_KEY ?? "";
 
 export async function GET(request: NextRequest) {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
   const { searchParams } = new URL(request.url);
   const address = searchParams.get("address");
   const heading = searchParams.get("heading") ?? "0";
