@@ -119,6 +119,7 @@ export function TerritoryMap() {
 
   const [selectedZip, setSelectedZip] = useState<ZipCluster | null>(null);
   const [hoveredZip, setHoveredZip] = useState<ZipCluster | null>(null);
+  const [selectedLead, setSelectedLead] = useState<MapLead | null>(null);
 
   const [filters, setFilters] = useState<Filters>(makeDefaultFilters);
   const [filterOpen, setFilterOpen] = useState(true);
@@ -198,6 +199,24 @@ export function TerritoryMap() {
     })),
   }), [filteredClusters]);
 
+  // Leads with exact geocoded coordinates → individual pins
+  const leadPoints = useMemo(() => {
+    const pts: MapLead[] = [];
+    for (const leads of filteredLeadsByZip.values())
+      for (const l of leads)
+        if (l.lat != null && l.lng != null) pts.push(l);
+    return pts;
+  }, [filteredLeadsByZip]);
+
+  const leadPointsGeoJSON = useMemo(() => ({
+    type: "FeatureCollection" as const,
+    features: leadPoints.map(l => ({
+      type: "Feature" as const,
+      properties: { id: l.id, color: gradeColor(l.gem_grade), score: l.opportunity_score },
+      geometry: { type: "Point" as const, coordinates: [l.lng as number, l.lat as number] },
+    })),
+  }), [leadPoints]);
+
   // Build GeoJSON for drive-time circles
   const driveCirclesGeoJSON = useMemo(() => {
     if (!origin) return { type: "FeatureCollection" as const, features: [] };
@@ -237,6 +256,12 @@ export function TerritoryMap() {
       setSettingOrigin(false);
       return;
     }
+    const leadHit = mapRef.current?.queryRenderedFeatures(e.point, { layers: ["lead-dots"] });
+    if (leadHit && leadHit.length > 0) {
+      const id = leadHit[0].properties?.id as string;
+      const lead = leadPoints.find(l => l.id === id);
+      if (lead) { setSelectedLead(lead); return; }
+    }
     const features = mapRef.current?.queryRenderedFeatures(e.point, {
       layers: ["cluster-circles"],
     });
@@ -245,12 +270,12 @@ export function TerritoryMap() {
       const cluster = filteredClusters.find(c => c.zip === zip);
       if (cluster) setSelectedZip(cluster);
     }
-  }, [settingOrigin, filteredClusters]);
+  }, [settingOrigin, filteredClusters, leadPoints]);
 
   const handleMapHover = useCallback((e: MapMouseEvent) => {
     const map = mapRef.current?.getMap();
     if (!map) return;
-    const features = map.queryRenderedFeatures(e.point, { layers: ["cluster-circles"] });
+    const features = map.queryRenderedFeatures(e.point, { layers: ["cluster-circles", "lead-dots"] });
     map.getCanvas().style.cursor = features.length > 0 ? "pointer" : settingOrigin ? "crosshair" : "";
     if (features.length > 0) {
       const zip = features[0].properties?.zip as string;
@@ -395,6 +420,44 @@ export function TerritoryMap() {
                 }}
               />
             </Source>
+
+            {/* Exact lead pins (geocoded street-level) */}
+            <Source id="lead-points" type="geojson" data={leadPointsGeoJSON}>
+              <Layer
+                id="lead-dots"
+                type="circle"
+                paint={{
+                  "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 2, 11, 5, 15, 8],
+                  "circle-color": ["get", "color"],
+                  "circle-opacity": 0.95,
+                  "circle-stroke-width": 1,
+                  "circle-stroke-color": "#0a0a0a",
+                }}
+              />
+            </Source>
+
+            {/* Exact lead popup */}
+            {selectedLead && selectedLead.lat != null && selectedLead.lng != null && (
+              <Popup
+                longitude={selectedLead.lng}
+                latitude={selectedLead.lat}
+                anchor="bottom"
+                offset={16}
+                closeOnClick={false}
+                onClose={() => setSelectedLead(null)}
+                className="lm-map-popup"
+              >
+                <div className="px-3 py-2.5 rounded-lg" style={{ background: "#0a0a0a", border: `1px solid ${CAVE.stoneEdge}`, minWidth: 180, maxWidth: 240 }}>
+                  <p className="text-[11px] font-bold text-neutral-100 leading-tight">{selectedLead.property_address ?? selectedLead.owner_name ?? "Property"}</p>
+                  <p className="text-[10px] text-neutral-500 mt-0.5">{[selectedLead.property_city, selectedLead.property_state].filter(Boolean).join(", ")}</p>
+                  <div className="flex items-center gap-2 mt-1.5 text-[10px]">
+                    <span style={{ color: gradeColor(selectedLead.gem_grade) }}>● {selectedLead.gem_grade}</span>
+                    <span className="text-neutral-400">score {selectedLead.opportunity_score}</span>
+                    {selectedLead.equity_percent != null && <span className="text-neutral-500">· {Math.round(selectedLead.equity_percent)}% eq</span>}
+                  </div>
+                </div>
+              </Popup>
+            )}
 
             {/* Hover popup */}
             {hoveredZip && (
