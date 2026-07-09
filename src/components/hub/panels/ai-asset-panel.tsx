@@ -252,14 +252,14 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
   return (
     <div
       className={cn(
-        "h-full w-full flex transition-all duration-500",
+        "h-full w-full flex flex-col md:flex-row overflow-y-auto md:overflow-hidden transition-all duration-500",
         isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
       )}
       style={{ background: CAVE.deep }}
     >
       {/* ── LEFT COLUMN — Asset Library ──────────────────────────────── */}
       <div
-        className="w-60 flex-shrink-0 flex flex-col gap-5 p-5 overflow-y-auto"
+        className="w-full md:w-60 md:flex-shrink-0 flex flex-col gap-5 p-5 md:overflow-y-auto"
         style={{ borderRight: `1px solid ${CAVE.stoneMid}` }}
       >
         {/* Asset Types */}
@@ -399,7 +399,7 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
       </div>
 
       {/* ── CENTER COLUMN — Asset Manager ─────────────────────────────── */}
-      <div className="flex-1 flex flex-col gap-5 p-5 overflow-y-auto min-w-0">
+      <div className="w-full md:flex-1 flex flex-col gap-5 p-5 md:overflow-y-auto min-w-0">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -604,7 +604,7 @@ export function AIAssetPanel({ isActive, plan = "free", isUnlocked }: AIAssetPan
 
       {/* ── RIGHT COLUMN — Intelligence / Monetization ───────────────── */}
       <div
-        className="w-72 flex-shrink-0 flex flex-col gap-5 p-5 overflow-y-auto"
+        className="w-full md:w-72 md:flex-shrink-0 flex flex-col gap-5 p-5 md:overflow-y-auto"
         style={{ borderLeft: `1px solid ${CAVE.stoneMid}` }}
       >
         {/* Performance Metrics */}

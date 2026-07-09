@@ -271,7 +271,8 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
     left: POSITIONS["center"].left,
     top:  POSITIONS["center"].top,
   });
-  const [itemsAlign, setItemsAlign] = useState<"flex-start" | "flex-end">("flex-end");
+  const [itemsAlign, setItemsAlign] = useState<"flex-start" | "flex-end" | "center">("flex-end");
+  const [isMobile, setIsMobile] = useState(false);
   const [tailSide, setTailSide]     = useState<"right" | "left">("right");
   const [animating, setAnimating]   = useState(false);
 
@@ -288,19 +289,32 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
     }
   }, [forceOpen]);
 
+  // Track mobile viewport so the guide centers safely on small screens
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   // Move robot to step position with a brief fade-out/in
   useEffect(() => {
     if (!visible) return;
     const cfg = POSITIONS[STEPS[step]?.pos ?? "bottom-right"];
     setAnimating(true);
     const t = setTimeout(() => {
-      setPosStyle({ left: cfg.left, top: cfg.top });
-      setItemsAlign(cfg.itemsAlign);
+      if (isMobile) {
+        setPosStyle({ left: "50%", top: "auto", bottom: "16px", transform: "translateX(-50%)" });
+        setItemsAlign("center");
+      } else {
+        setPosStyle({ left: cfg.left, top: cfg.top });
+        setItemsAlign(cfg.itemsAlign);
+      }
       setTailSide(cfg.tailSide);
       setAnimating(false);
     }, step === 0 ? 0 : 180); // slight delay on step 0 so entry animation runs first
     return () => clearTimeout(t);
-  }, [step, visible]);
+  }, [step, visible, isMobile]);
 
   // Blink randomly
   useEffect(() => {
@@ -377,7 +391,9 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
           transition: leaving
             ? "none"
             : "left 450ms cubic-bezier(0.22,1,0.36,1), top 450ms cubic-bezier(0.22,1,0.36,1), opacity 180ms ease",
-          animation: (step === 0 && !leaving)
+          animation: isMobile
+            ? undefined
+            : (step === 0 && !leaving)
             ? "robot-enter 400ms cubic-bezier(0.22,1,0.36,1) forwards"
             : leaving
             ? "robot-exit 300ms cubic-bezier(0.4,0,1,1) forwards"
@@ -389,7 +405,7 @@ export function TutorialOverlay({ onTabChange, forceOpen = false, onClose }: Tut
         <div
           className="relative"
           style={{
-            width: "340px",
+            width: isMobile ? "min(340px, calc(100vw - 24px))" : "340px",
             animation: `step-in 260ms cubic-bezier(0.22,1,0.36,1) forwards`,
             animationDelay: "60ms",
             opacity: 0,
