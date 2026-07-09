@@ -794,7 +794,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
 
         {/* Property leads table */}
         {!loading && !error && leadType === "property" && sortedProp.length > 0 && (
-          <table className="w-full border-collapse">
+          <table className="w-full min-w-[680px] md:min-w-0 border-collapse">
             <thead className="sticky top-0 z-10" style={{ background: "#0d0d0d" }}>
               <tr style={{ borderBottom: `1px solid ${CAVE.stoneEdge}` }}>
                 <SortTh label="Owner / Address" sortKey="name"      current={sortKey} dir={sortDir} onSort={handleSort} />
@@ -909,7 +909,7 @@ export function LeadsPanel({ isActive, onNavigate }: { isActive: boolean; onNavi
 
         {/* Business leads table */}
         {!loading && !error && leadType === "business" && sortedBiz.length > 0 && (
-          <table className="w-full border-collapse">
+          <table className="w-full min-w-[680px] md:min-w-0 border-collapse">
             <thead className="sticky top-0 z-10" style={{ background: "#0d0d0d" }}>
               <tr style={{ borderBottom: `1px solid ${CAVE.stoneEdge}` }}>
                 <SortTh label="Company"  sortKey="name"       current={sortKey} dir={sortDir} onSort={handleSort} />

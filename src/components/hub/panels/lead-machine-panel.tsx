@@ -2227,14 +2227,14 @@ function LeadMachinePanelInner({ isActive, realtorSlug, onNavigate, onMiningChan
 
       <div
         className={cn(
-          "h-full w-full flex transition-all duration-500",
+          "h-full w-full flex flex-col md:flex-row overflow-y-auto md:overflow-hidden transition-all duration-500",
           isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
         )}
         style={{ background: CAVE.deep }}
       >
         {/* ── LEFT COLUMN ──────────────────────────────────────────────── */}
         <div
-          className="w-64 flex-shrink-0 flex flex-col gap-5 p-5 overflow-y-auto"
+          className="w-full md:w-64 md:flex-shrink-0 flex flex-col gap-5 p-5 md:overflow-y-auto"
           style={{ borderRight: `1px solid ${CAVE.stoneMid}` }}
         >
           {/* Mine New Area */}
@@ -2797,7 +2797,7 @@ function LeadMachinePanelInner({ isActive, realtorSlug, onNavigate, onMiningChan
         )}
 
         {/* ── CENTER COLUMN — shown when leads exist ────────────────────── */}
-        <div className={cn("flex-1 flex flex-col gap-4 p-5 overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete" || !leadsFetched || (ALL_LEADS.length === 0 && miningStatus === "idle")) && "hidden")}>
+        <div className={cn("w-full md:flex-1 flex flex-col gap-4 p-5 md:overflow-y-auto min-w-0", (miningStatus === "running" || miningStatus === "complete" || !leadsFetched || (ALL_LEADS.length === 0 && miningStatus === "idle")) && "hidden")}>
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -2936,7 +2936,7 @@ function LeadMachinePanelInner({ isActive, realtorSlug, onNavigate, onMiningChan
 
         {/* ── RIGHT COLUMN ─────────────────────────────────────────────── */}
         <div
-          className={cn("w-72 flex-shrink-0 flex flex-col gap-5 p-5 overflow-y-auto", (miningStatus === "running" || miningStatus === "complete") && "hidden")}
+          className={cn("w-full md:w-72 md:flex-shrink-0 flex flex-col gap-5 p-5 md:overflow-y-auto", (miningStatus === "running" || miningStatus === "complete") && "hidden")}
           style={{ borderLeft: `1px solid ${CAVE.stoneMid}` }}
         >
           {/* AI Scoring Engine */}
